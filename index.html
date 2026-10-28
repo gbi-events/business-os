@@ -184,6 +184,7 @@ body.authed #login{display:none}
       <button class="btn primary" id="lgbtn" type="submit">Se connecter</button>
     </form>
     <a id="lgforgot">Mot de passe oublié ?</a>
+    <a id="lgsignup">Première connexion ? Créer mon accès</a>
     <div class="msg" id="lgmsg" role="status"></div>
   </div>
 </div>
@@ -1111,10 +1112,10 @@ const $=s=>document.querySelector(s);
 const msg=(t,c)=>{const m=$('#lgmsg');m.textContent=t||'';m.className='msg '+(c||'')};
 let mode='login';
 function setMode(m){mode=m;
-  $('#lgpwdrow').hidden=m!=='login';$('#lgnewrow').hidden=m!=='newpwd';$('#lgmail').closest('label').hidden=m==='newpwd';
-  $('#lgforgot').hidden=m!=='login';
-  $('#lgbtn').textContent=m==='login'?'Se connecter':m==='forgot'?'Recevoir le lien':'Enregistrer mon mot de passe';
-  $('#lgintro').textContent=m==='login'?"Connecte-toi avec l'email de ton invitation.":m==='forgot'?'Saisis ton email : tu recevras un lien pour choisir un nouveau mot de passe.':'Choisis ton mot de passe pour les prochaines connexions.';
+  $('#lgpwdrow').hidden=m!=='login';$('#lgnewrow').hidden=!(m==='newpwd'||m==='signup');$('#lgmail').closest('label').hidden=m==='newpwd';
+  $('#lgforgot').hidden=m!=='login';$('#lgsignup').hidden=m!=='login';
+  $('#lgbtn').textContent=m==='login'?'Se connecter':m==='forgot'?'Recevoir le lien':m==='signup'?'Créer mon accès':'Enregistrer mon mot de passe';
+  $('#lgintro').textContent=m==='login'?"Connecte-toi avec l'email de ton invitation.":m==='forgot'?'Saisis ton email : tu recevras un lien pour choisir un nouveau mot de passe.':m==='signup'?"Réservé aux membres de GBI Events : saisis ton email et choisis un mot de passe. Tu recevras un email de confirmation.":'Choisis ton mot de passe pour les prochaines connexions.';
   msg('')}
 async function enter(session){
   const email=(session.user.email||'').toLowerCase();
@@ -1137,6 +1138,12 @@ $('#lgform').addEventListener('submit',async e=>{
     }else if(mode==='forgot'){
       const {error}=await sb.auth.resetPasswordForEmail($('#lgmail').value.trim(),{redirectTo:location.origin+location.pathname});
       msg(error?error.message:'Lien envoyé : ouvre ton email.',error?'bad':'ok');
+    }else if(mode==='signup'){
+      const p=$('#lgnew').value;if(p.length<8){msg('8 caractères minimum.','bad');return}
+      const {data,error}=await sb.auth.signUp({email:$('#lgmail').value.trim(),password:p,options:{emailRedirectTo:location.origin+location.pathname}});
+      if(error){msg(/not allowed|disabled/i.test(error.message)?"Les accès se créent sur invitation : demande à Germaine.":error.message,'bad');return}
+      if(data.session){await enter(data.session);return}
+      msg("Email de confirmation envoyé : clique sur le lien reçu, puis reviens te connecter ici.",'ok');setMode('login');msg("Email de confirmation envoyé : clique sur le lien reçu, puis reviens te connecter ici.",'ok');
     }else{
       const p=$('#lgnew').value;if(p.length<8){msg('8 caractères minimum.','bad');return}
       const {error}=await sb.auth.updateUser({password:p});
@@ -1147,13 +1154,14 @@ $('#lgform').addEventListener('submit',async e=>{
   }finally{b.disabled=false}
 });
 $('#lgforgot').addEventListener('click',()=>setMode('forgot'));
+$('#lgsignup').addEventListener('click',()=>setMode('signup'));
 document.addEventListener('click',async e=>{if(e.target&&e.target.id==='logout'){await sb.auth.signOut();try{localStorage.removeItem('gbi_who')}catch(x){}location.replace(location.pathname)}});
 sb.auth.onAuthStateChange(ev=>{if(ev==='PASSWORD_RECOVERY')setMode('newpwd')});
 (async()=>{
   setMode('login');
   if(!cfg.url||!cfg.key){msg('Configuration manquante (config.js).','bad');return}
   const {data}=await sb.auth.getSession();
-  if(data.session&&/type=(invite|recovery|signup|magiclink)/.test(HASH0)){setMode('newpwd');return}
+  if(data.session&&/type=(invite|recovery)/.test(HASH0)){setMode('newpwd');return}
   if(data.session)await enter(data.session);
 })();
 })();
