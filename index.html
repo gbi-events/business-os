@@ -1,0 +1,1161 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>GBI Business OS</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout concept: poste de commande de vente. Bandeau de chiffres, onglets, files d'action; fiche prospect en tiroir. */
+:root{
+  --bg:#F2F5F2; --surface:#FFFFFF; --surface2:#E8EEE9; --ink:#14211C; --muted:#5A6B63; --line:#D3DCD5;
+  --accent:#0D6B58; --accent-ink:#FFFFFF; --accent-soft:#D8EEE7; --brass:#9A6F12; --brass-soft:#F4E7C6;
+  --good:#1D7A45; --good-soft:#D9EFE1; --warn:#9A6A12; --warn-soft:#F6E8C8; --bad:#B03A2E; --bad-soft:#F6DAD6;
+  --shadow:0 1px 2px rgba(20,33,28,.06),0 6px 20px rgba(20,33,28,.06);
+  --f-display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --f-body:"Instrument Sans","Segoe UI",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0E1613; --surface:#151F1B; --surface2:#1D2A25; --ink:#E6EEE9; --muted:#93A59C; --line:#2A3A33;
+  --accent:#3FBF9F; --accent-ink:#052018; --accent-soft:#17352D; --brass:#E0AE4A; --brass-soft:#3A2F14;
+  --good:#58C386; --good-soft:#163523; --warn:#E3AA3E; --warn-soft:#3A2D12; --bad:#F0806F; --bad-soft:#3E1D19;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.35); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1613; --surface:#151F1B; --surface2:#1D2A25; --ink:#E6EEE9; --muted:#93A59C; --line:#2A3A33;
+  --accent:#3FBF9F; --accent-ink:#052018; --accent-soft:#17352D; --brass:#E0AE4A; --brass-soft:#3A2F14;
+  --good:#58C386; --good-soft:#163523; --warn:#E3AA3E; --warn-soft:#3A2D12; --bad:#F0806F; --bad-soft:#3E1D19;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.35); color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.45;padding-block:0;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--f-display);font-weight:700;margin:0;text-wrap:balance;letter-spacing:-.01em}
+h2{font-size:18px} h3{font-size:15px}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto;padding-block:14px 48px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-block:6px 10px}
+.brand{display:flex;align-items:baseline;gap:10px}
+.brand h1{font-size:22px}
+.brand span{color:var(--muted);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+.who{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.who select{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 8px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted);display:inline-block}
+.dot.on{background:var(--good)} .dot.off{background:var(--bad)}
+nav#tabs{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--line);margin-bottom:16px;scrollbar-width:thin}
+nav#tabs button{background:none;border:0;border-bottom:3px solid transparent;padding:10px 14px;white-space:nowrap;color:var(--muted);font-weight:500}
+nav#tabs button[aria-current="page"]{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
+nav#tabs .n{background:var(--accent);color:var(--accent-ink);border-radius:999px;font-size:11px;padding:1px 7px;margin-left:6px;font-weight:600}
+.banner{background:var(--warn-soft);color:var(--ink);border:1px solid var(--warn);border-radius:10px;padding:10px 12px;margin-bottom:14px}
+.banner.bad{background:var(--bad-soft);border-color:var(--bad)}
+.kpis{display:grid;grid-template-columns:1.6fr repeat(4,1fr);gap:10px;margin-bottom:16px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.kpi.hero{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.kpi .kl{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.kpi.hero .kl{color:inherit;opacity:.7}
+.kpi b{font-family:var(--f-display);font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums}
+.kpi.hero b{font-size:44px}
+.kpi .ks{font-size:12px;color:var(--muted)}
+.kpi.hero .ks{color:inherit;opacity:.8}
+.grid2{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:16px;align-items:start}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;min-width:0}
+.card+.card{margin-top:14px}
+.card h2,.card h3{margin-bottom:8px}
+.muted{color:var(--muted)} .sm{font-size:12px}
+.chip{display:inline-block;border-radius:999px;padding:2px 9px;font-size:11.5px;font-weight:600;background:var(--surface2);color:var(--ink);white-space:nowrap}
+.chip.hot{background:var(--accent-soft);color:var(--accent)} .chip.good{background:var(--good-soft);color:var(--good)}
+.chip.warn{background:var(--warn-soft);color:var(--warn)} .chip.bad{background:var(--bad-soft);color:var(--bad)}
+.chip.brass{background:var(--brass-soft);color:var(--brass)} .chip.off{opacity:.45;font-weight:500}
+.btn{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 12px;font-weight:500}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+.btn.danger{color:var(--bad);border-color:var(--bad)}
+.btn.sm{padding:4px 9px;font-size:12.5px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.ro [data-write]{pointer-events:none;opacity:.45}
+.q-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.q{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 10px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface);cursor:pointer}
+.q:hover{border-color:var(--accent)}
+.q .t{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.q .t b{overflow-wrap:anywhere}
+.q .nx{grid-column:1/-1;font-size:13px;color:var(--muted)}
+.q .btns{display:flex;gap:6px;align-items:center}
+.callcard{border:2px solid var(--accent);border-radius:14px;padding:16px;background:var(--surface)}
+.callcard h2{margin:0 0 4px;font-size:20px}
+.callnum{display:inline-block;font-size:26px;font-weight:700;letter-spacing:.02em;margin:8px 0;text-decoration:none;color:var(--accent)}
+.script{background:var(--surface2);border-radius:10px;padding:10px 12px;font-size:13.5px;line-height:1.5;margin:10px 0}
+.script b{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:6px}
+.script b:first-child{margin-top:0}
+.res{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:10px}
+.res .btn{padding:10px 8px;text-align:center}
+.callstats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.callstats div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.callstats b{display:block;font-size:20px}
+.callstats span{font-size:11.5px;color:var(--muted)}
+.nophone{display:grid;grid-template-columns:minmax(0,1fr) 150px auto auto;gap:6px;align-items:center;border-bottom:1px solid var(--line);padding:6px 0;font-size:13px}
+@media(max-width:640px){.nophone{grid-template-columns:1fr 1fr}.callstats{grid-template-columns:1fr 1fr}}
+.sec-label{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:12px 0 6px}
+.sec-label:first-child{margin-top:0}
+.funnel{display:grid;gap:6px}
+.fn{display:grid;grid-template-columns:96px 1fr 38px;gap:8px;align-items:center;font-size:12.5px}
+.fn .bar{height:10px;background:var(--surface2);border-radius:6px;overflow:hidden}
+.fn .bar i{display:block;height:100%;background:var(--accent);border-radius:6px}
+.fn span:last-child{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.ev{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}
+.ev:last-child{border:0}
+.kanban{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(230px,1fr);gap:10px;overflow-x:auto;padding-bottom:8px}
+.col{background:var(--surface2);border-radius:12px;padding:8px;min-width:0;display:flex;flex-direction:column;gap:8px}
+.col h3{font-size:13px;display:flex;justify-content:space-between;gap:6px;padding:2px 4px}
+.col h3 small{font-weight:500;color:var(--muted)}
+.pc{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 10px;cursor:pointer;display:flex;flex-direction:column;gap:4px}
+.pc:hover{border-color:var(--accent)}
+.pc b{overflow-wrap:anywhere}
+.bar-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.bar-tools input,.bar-tools select{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 9px;min-width:0}
+.bar-tools input[type=search]{flex:1 1 200px}
+.rows{display:flex;flex-direction:column;gap:6px}
+.row{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1.4fr) minmax(0,1.6fr);gap:6px 12px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 12px;cursor:pointer;align-items:center}
+.row:hover{border-color:var(--accent)}
+.row .m{display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+.row b{overflow-wrap:anywhere}
+.f{display:flex;flex-direction:column;gap:3px;min-width:0}
+.f>span{font-size:12px;color:var(--muted)}
+.f input,.f select,.f textarea{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 9px;width:100%;min-width:0}
+.f textarea{min-height:84px;resize:vertical}
+.f textarea[data-f=notes]{min-height:300px}
+#callnote{min-height:160px;resize:vertical}
+ul.brief{margin:8px 0;padding-left:18px;font-size:13.5px;line-height:1.5}ul.brief li{margin:2px 0;overflow-wrap:anywhere}ul.brief a{color:var(--accent)}
+.daybar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;font-size:13px}.daybar select{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 9px}
+.fg{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.fg.w2{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.ck{display:flex;gap:8px;align-items:center;font-size:13px}
+.ck input{width:auto}
+table.t{width:100%;border-collapse:collapse;font-size:13px}
+table.t th,table.t td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+table.t th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+table.t td.r,table.t th.r{text-align:right;font-variant-numeric:tabular-nums}
+.scroll-x{overflow-x:auto}
+.total{display:flex;justify-content:space-between;align-items:baseline;border-top:2px solid var(--ink);margin-top:8px;padding-top:8px}
+.total b{font-family:var(--f-display);font-size:26px;font-variant-numeric:tabular-nums}
+.draft{width:100%;min-height:200px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;font-family:var(--f-body);font-size:13.5px;line-height:1.5;resize:vertical}
+.warns{display:flex;flex-direction:column;gap:6px;margin:8px 0}
+.warns div{border-radius:8px;padding:7px 10px;font-size:13px;background:var(--warn-soft);border:1px solid var(--warn)}
+.warns div.bad{background:var(--bad-soft);border-color:var(--bad)}
+.warns div.ok{background:var(--good-soft);border-color:var(--good)}
+#drawer{position:fixed;inset:0;z-index:30;display:flex;justify-content:flex-end;background:rgba(10,18,15,.45)}
+#drawer[hidden]{display:none}
+#drawer .panel{background:var(--surface);width:min(620px,100%);height:100%;overflow-y:auto;padding:16px max(16px,env(safe-area-inset-right,0px)) 40px 16px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:12px}
+#drawer .ph{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;position:sticky;top:0;background:var(--surface);padding-block:4px 8px;z-index:2}
+.stages{display:flex;gap:6px;flex-wrap:wrap}
+.stages button{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:4px 10px;font-size:12.5px}
+.stages button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+.log{display:flex;flex-direction:column;gap:4px;font-size:12.5px;max-height:220px;overflow-y:auto}
+.log div{display:flex;gap:8px}
+.log time{color:var(--muted);white-space:nowrap}
+#toast{position:fixed;left:50%;bottom:max(18px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:50;max-width:min(520px,calc(100% - 32px));background:var(--ink);color:var(--bg);border-radius:10px;padding:10px 14px;box-shadow:var(--shadow);font-size:13.5px}
+#toast[hidden]{display:none}
+#toast.bad{background:var(--bad);color:#fff}
+.empty{border:1px dashed var(--line);border-radius:12px;padding:22px;text-align:center;color:var(--muted)}
+.empty b{display:block;color:var(--ink);font-family:var(--f-display);font-size:16px;margin-bottom:4px}
+.note{font-size:12.5px;color:var(--muted)}
+ul.plain{margin:6px 0 0;padding-left:18px} ul.plain li{margin:3px 0}
+@media (max-width:820px){
+  .kpis{grid-template-columns:1fr 1fr}.kpi.hero{grid-column:1/-1}
+  .grid2{grid-template-columns:1fr}
+  .row{grid-template-columns:1fr}
+  .kpi.hero b{font-size:38px}
+}
+
+body:not(.authed) #app{display:none}
+#login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 0}
+body.authed #login{display:none}
+#login .box{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px;width:min(400px,100%);box-shadow:var(--shadow);display:flex;flex-direction:column;gap:12px}
+#login h1{font-size:24px}
+#login .f input{font-size:15px;padding:10px}
+#login .msg{font-size:13px;min-height:18px}
+#login .msg.bad{color:var(--bad)} #login .msg.ok{color:var(--good)}
+#login a{color:var(--accent);font-size:13px;cursor:pointer}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+</style>
+
+<div id="login">
+  <div class="box" role="dialog" aria-label="Connexion">
+    <div class="brand"><h1>GBI Business OS</h1></div>
+    <p class="muted sm" id="lgintro">Connecte-toi avec l'email de ton invitation.</p>
+    <form id="lgform" class="f" style="gap:10px">
+      <label class="f"><span>Email</span><input id="lgmail" type="email" autocomplete="username" required></label>
+      <label class="f" id="lgpwdrow"><span>Mot de passe</span><input id="lgpwd" type="password" autocomplete="current-password"></label>
+      <label class="f" id="lgnewrow" hidden><span>Nouveau mot de passe (8 caractères minimum)</span><input id="lgnew" type="password" autocomplete="new-password" minlength="8"></label>
+      <button class="btn primary" id="lgbtn" type="submit">Se connecter</button>
+    </form>
+    <a id="lgforgot">Mot de passe oublié ?</a>
+    <div class="msg" id="lgmsg" role="status"></div>
+  </div>
+</div>
+<div id="app" class="wrap">
+  <header class="top">
+    <div class="brand"><h1>GBI Business OS</h1><span>Ventes d'abord</span></div>
+    <div class="who">
+      <span id="sync"><i class="dot"></i> <span id="synctext">Connexion…</span></span>
+      <label>Je suis <select id="who" aria-label="Qui utilise l'application"></select></label>
+      <button class="btn sm" id="logout" type="button">Déconnexion</button>
+    </div>
+  </header>
+  <nav id="tabs" aria-label="Sections"></nav>
+  <div id="banners"></div>
+  <main id="main"></main>
+</div>
+<div id="drawer" hidden></div>
+<div id="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+(function(){
+'use strict';
+
+/* ---------- constantes métier (sources : dossiers GBI Events du 10 et 15 octobre 2026) ---------- */
+const STAGES=[['a_contacter','À contacter'],['contacte','Contacté'],['repondu','Répondu'],['qualifie','Sales Ready'],['devis','Devis envoyé'],['signe','Signé'],['perdu','Perdu'],['stop','Opposition']];
+const STAGE_L=Object.fromEntries(STAGES);
+const PIPE=['a_contacter','contacte','repondu','qualifie','devis','signe'];
+const SEGMENTS=[['lieu','Lieu / domaine / château'],['planner','Wedding planner'],['agence','Agence événementielle'],['traiteur','Traiteur / décorateur'],['entreprise','Entreprise / association'],['particulier','Particulier']];
+const SEG_L=Object.fromEntries(SEGMENTS);
+const CHANNELS=[['b2b','Email de prospection (B2B)'],['phone','Prospection téléphonique'],['instagram','Instagram (organique, DM)'],['social','Facebook / TikTok / groupes (organique)'],['meta','Meta Ads (Facebook, Instagram)'],['google','Google Ads'],['gbp','Fiche Google / référencement'],['site','Formulaire du site'],['lbc','Leboncoin'],['whatsapp','WhatsApp'],['reco','Recommandation / partenaire'],['entrant','Autre demande entrante'],['autre','Autre']];
+const INBOUND=['instagram','meta','google','gbp','site','lbc','whatsapp','entrant'];
+const CH_L=Object.fromEntries(CHANNELS);
+const OFFERS=[['cle','Événement clé en main'],['pack','Pack mariage clé en main'],['traiteur','Traiteur / réception'],['deco','Décoration'],['location','Location de matériel'],['partenariat','Partenariat prestataire']];
+const OFFER_TXT={cle:'une prestation clé en main : traiteur, décoration et matériel gérés par une seule équipe',pack:'nos packs mariage clé en main (traiteur, décoration et matériel)',traiteur:'un service traiteur pour vos réceptions : cocktails, buffets, mignardises, et notre spécialité, la cuisine africaine',deco:'la décoration événementielle sur mesure',location:'la location de matériel (chaises, tables, nappes, vaisselle)',partenariat:'un partenariat : vous recommandez à vos clients une solution clé en main'};
+const EVENT_KINDS=[['','— à préciser —'],['mariage','Mariage'],['anniversaire','Anniversaire'],['bapteme','Baptême'],['babyshower','Baby shower'],['entreprise','Entreprise (réception, séminaire, soirée)'],['cocktail','Cocktail / inauguration'],['autre','Autre']];
+const EK_L=Object.fromEntries(EVENT_KINDS);
+const MAT=[['chaises','Chaises','stChaises','chaise'],['tablesRect','Tables rectangulaires','stTablesRect','table'],['tablesRondes','Tables rondes','stTablesRondes','table'],['nappes','Nappes','stNappes','nappe'],['kits','Kits de vaisselle','stKits','kit'],['couvertsOr','Couverts dorés','stCouvertsOr','couvert'],['couvertsArg','Couverts argentés','stCouvertsArg','couvert']];
+const RSTAT=[['demande','Demande (ne bloque rien)'],['option','Option (matériel bloqué)'],['confirmee','Confirmée'],['sortie','Sortie chez le client'],['rendue','Rendue'],['annulee','Annulée']];
+const RSTAT_L=Object.fromEntries(RSTAT);
+const BLOCKING=['option','confirmee','sortie'];
+const INTENT=['Aucune','Faible','Moyenne','Forte'];
+const SCORE=[['fit','Adéquation à la cible',25],['cross','Vente croisée possible',20],['recur','Récurrence possible',20],['fin','Potentiel financier',15],['zone','Zone couverte',10],['need','Besoin identifiable',10]];
+const DEF_PRICE={minPanier:1500,cocktail:null,classic:27,silver:35,gold:40,vin:10,vinMin:30,service:55,fumee:120,plancha:3,deco30:600,deco50:900,deco100:1200,decoMin:400,chaise:2,table:10,nappe:8,kit:2,couvert:0.5,
+  stChaises:572,stTablesRect:120,stTablesRondes:8,stNappes:null,stKits:120,stCouvertsOr:120,stCouvertsArg:120};
+const PRICE_FIELDS=[['minPanier','Panier minimum par événement (€)'],['cocktail','Cocktail / mignardises (€/pers.), à fixer par Germaine'],['classic','Formule Classic (€/pers.)'],['silver','Formule Silver (€/pers.)'],['gold','Formule Gold (€/pers.)'],['vin',"Vin d'honneur (€/pers.)"],['vinMin',"Vin d'honneur : minimum d'invités"],['service','Service à table (€/pers.)'],['fumee','Option fumée (€)'],['plancha','Animation plancha (€/pers.)'],['deco30','Déco, pack 30 invités (€)'],['deco50','Déco, pack 50 invités (€)'],['deco100','Déco, pack 100 invités (€)'],['decoMin','Déco sur mesure, à partir de (€)'],['chaise','Chaise (€/unité)'],['table','Table (€/unité)'],['nappe','Nappe (€/unité)'],['kit','Kit de vaisselle (€/unité)'],['couvert','Couverts / extras (€/unité)']];
+const STOCK_FIELDS=[['stChaises','Chaises'],['stTablesRect','Tables rectangulaires'],['stTablesRondes','Tables rondes (8 ou 23 selon le relevé)'],['stNappes','Nappes'],['stKits','Kits de vaisselle'],['stCouvertsOr','Couverts dorés'],['stCouvertsArg','Couverts argentés']];
+
+/* ---------- état ---------- */
+const S={view:'today',prospects:[],reservations:[],r:{client:'',phone:'',channel:'lbc',start:'',end:'',note:'',items:{}},matDay:'',pricing:{...DEF_PRICE},spend:{},loaded:false,db:null,canWrite:true,offline:false,err:'',
+  day:'',who:'',call:{pid:'',skip:[],lost:'Déjà un traiteur'},drawer:null,f:{q:'',seg:'',chan:'',stage:'actifs'},showImport:false,showAll:false,confirmDel:null,
+  q:{pid:'',date:'',kind:'',guests:'',formule:'none',cocktail:false,vin:false,service:false,fumee:false,plancha:false,deco:'none',decoCustom:'',chaises:'',tablesRect:'',tablesRondes:'',nappes:'',kits:'',couvertsOr:'',couvertsArg:'',validated:false},
+  m:{pid:'',tpl:'first',offer:'cle'},dirty:false,downloads:null};
+try{S.who=localStorage.getItem('gbi_who')||'';S.view=localStorage.getItem('gbi_view')||'today'}catch(e){}
+
+/* ---------- utilitaires ---------- */
+const $=s=>document.querySelector(s);
+const main=$('#main');
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const p2=n=>String(n).padStart(2,'0');
+const toISO=d=>d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());
+const today=()=>toISO(new Date());
+const addDays=(iso,n)=>{const d=new Date(iso+'T12:00:00');d.setDate(d.getDate()+n);return toISO(d)};
+const fmt=n=>new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:2}).format(Number(n)||0);
+const num=v=>{const n=parseFloat(String(v).replace(',','.'));return isFinite(n)?n:0};
+const fdate=iso=>{if(!iso)return '';const s=String(iso).slice(0,10).split('-');return s.length===3?s[2]+'/'+s[1]:iso};
+const fdateFull=iso=>{if(!iso)return '';const s=String(iso).slice(0,10).split('-');return s.length===3?s[2]+'/'+s[1]+'/'+s[0]:iso};
+const hoursAgo=iso=>iso?(Date.now()-new Date(iso).getTime())/36e5:0;
+const ago=iso=>{if(!iso)return '';const h=hoursAgo(iso);if(h<1)return 'il y a '+Math.max(1,Math.round(h*60))+' min';if(h<48)return 'il y a '+Math.round(h)+' h';return 'il y a '+Math.round(h/24)+' j'};
+const sum=(a,f)=>a.reduce((s,x)=>s+(Number(f(x))||0),0);
+const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+const chip=(t,c='')=>`<span class="chip ${c}">${esc(t)}</span>`;
+const pot=p=>SCORE.reduce((s,[k,,w])=>s+((p.score&&p.score[k])?w:0),0);
+const byId=id=>S.prospects.find(p=>p.id===id);
+function toast(msg,bad){const t=$('#toast');t.textContent=msg;t.className=bad?'bad':'';t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>{t.hidden=true},bad?6000:3200)}
+function errMsg(e){const c=e&&e.code;if(c==='invalid_argument')return "Écriture refusée : ton compte n'est pas autorisé (table membres).";if(c==='quota_exceeded')return 'Base pleine : supprime des fiches.';if(c==='unavailable'||c==='resource_exhausted')return 'Service occupé, réessaie dans un instant.';return 'Enregistrement impossible'+(c?' ('+c+')':'')+'.'}
+
+/* ---------- accès base ---------- */
+async function save(id,patch){patch.updated=new Date().toISOString();await S.db.doc('prospects/'+id).update(patch)}
+function logAdd(p,txt){const l=(p.log||[]).slice(-59);l.push({t:new Date().toISOString(),by:S.who||'—',x:txt});return l}
+async function guard(fn){if(!S.db){toast("Base indisponible : reconnecte-toi ou recharge la page.",true);return false}try{await fn();return true}catch(e){toast(errMsg(e),true);return false}}
+
+/* ---------- règles d'étape ---------- */
+function weekendKey(iso){if(!iso)return null;const d=new Date(iso+'T12:00:00');const w=d.getDay();if(w!==0&&w!==6)return null;if(w===0)d.setDate(d.getDate()-1);return toISO(d)}
+function conflicts(date,pid,stages){const wk=weekendKey(date);if(!wk)return [];return S.prospects.filter(x=>x.id!==pid&&stages.includes(x.stage)&&x.eventDate&&weekendKey(x.eventDate)===wk)}
+function gate(q,stage){
+  if(stage==='qualifie'){
+    if((+q.intent||0)<2)return "Sales Ready demande une intention moyenne ou forte, avec une preuve. Un score de potentiel seul ne suffit pas.";
+    if(!q.signal)return "Note le signal observé (réponse, demande de prix, date d'événement…).";
+    if(!q.nextAction)return 'Indique la prochaine étape.';
+    const mp=num(S.pricing.minPanier);if(mp&&num(q.budgetVal)>0&&num(q.budgetVal)<mp)return 'Budget de '+fmt(q.budgetVal)+' : sous le panier minimum de '+fmt(mp)+'. Propose le clé en main pour monter le panier, ou passe la fiche en Perdu (motif « Budget sous le minimum »).';
+  }
+  if(stage==='devis'&&!(+q.quoteAmount>0))return 'Renseigne le montant du devis (ou prépare-le dans Devis).';
+  if(stage==='signe'){
+    if(!(+q.signedAmount>0))return 'Renseigne le montant signé.';
+    if(!q.eventDate)return "Renseigne la date de l'événement.";
+    const c=conflicts(q.eventDate,q.id,['signe']);
+    if(c.length)return 'Week-end déjà réservé par '+c[0].name+' (capacité : 1 événement par week-end). Vérifie avec Germaine.';
+  }
+  if(stage==='perdu'&&!q.lostReason)return 'Indique le motif de perte : il nourrit les statistiques.';
+  return null;
+}
+async function setStage(p,stage,patch){
+  patch=patch||{};
+  const q={...p,...patch};
+  const err=gate(q,stage);if(err){toast(err,true);return false}
+  const now=new Date().toISOString();const u={...patch,stage};
+  const rank=PIPE.indexOf(stage);
+  if(rank>=1&&!q.firstContact)u.firstContact=now;
+  if(rank>=2&&!q.repliedAt)u.repliedAt=now;
+  if(rank>=3&&!q.qualifiedAt)u.qualifiedAt=now;
+  if(stage==='devis'&&!q.quoteDate)u.quoteDate=now;
+  if(stage==='signe'&&!q.signedDate)u.signedDate=now;
+  if(stage==='stop'){u.optout=true;u.nextDate='';u.nextAction=''}
+  u.log=logAdd(q,'Étape : '+STAGE_L[stage]);
+  return guard(()=>save(p.id,u));
+}
+
+/* ---------- indicateurs ---------- */
+function kpis(){
+  const P=S.prospects,signed=P.filter(p=>p.stage==='signe');
+  const quoted=P.filter(p=>p.quoteDate).length;
+  const delays=signed.filter(p=>p.firstContact&&p.signedDate).map(p=>(new Date(p.signedDate)-new Date(p.firstContact))/864e5);
+  const dv=P.filter(p=>p.stage==='devis');
+  return {nSigned:signed.length,ca:sum(signed,p=>p.signedAmount),cashed:sum(signed,p=>p.cashedAmount),
+    nDevis:dv.length,devisSum:sum(dv,p=>p.quoteAmount),nReady:P.filter(p=>p.stage==='qualifie').length,
+    everQuoted:quoted,conv:quoted?Math.round(100*P.filter(p=>p.signedDate&&p.quoteDate).length/quoted)+' %':'—',
+    delay:delays.length?Math.round(delays.reduce((a,b)=>a+b,0)/delays.length)+' j':'—'};
+}
+function funnel(P){return [['Prospects',P.length],['Contactés',P.filter(p=>p.firstContact).length],['Réponses',P.filter(p=>p.repliedAt).length],['Qualifiés',P.filter(p=>p.qualifiedAt).length],['Devis',P.filter(p=>p.quoteDate).length],['Signés',P.filter(p=>p.signedDate).length]]}
+function funnelHTML(P){const f=funnel(P),mx=Math.max(1,f[0][1]);return `<div class="funnel">${f.map(([l,n])=>`<div class="fn"><span>${l}</span><div class="bar"><i style="width:${Math.round(100*n/mx)}%"></i></div><span>${n}</span></div>`).join('')}</div>`}
+function kpiHTML(){const k=kpis();return `<section class="kpis" aria-label="Indicateurs">
+  <div class="kpi hero"><span class="kl">Ventes signées</span><b>${k.nSigned}</b><span class="ks">${k.nSigned?fmt(k.ca)+' signés · '+fmt(k.cashed)+' encaissés':'Objectif : la première vente'}</span></div>
+  <div class="kpi"><span class="kl">Devis en cours</span><b>${k.nDevis}</b><span class="ks">${fmt(k.devisSum)}</span></div>
+  <div class="kpi"><span class="kl">Sales Ready</span><b>${k.nReady}</b><span class="ks">à appeler</span></div>
+  <div class="kpi"><span class="kl">Devis → vente</span><b>${k.conv}</b><span class="ks">${k.everQuoted} devis émis</span></div>
+  <div class="kpi"><span class="kl">Délai moyen</span><b>${k.delay}</b><span class="ks">1er contact → signature</span></div></section>`}
+
+const BRIEFS={"osm-10280086890":["Type : Lieu de réception","Ville : Rosny-sur-Seine (78)","Groupe Amadeus (site partagé avec Le Village de Sully) : un seul contact groupe possible. Pas d'email ni téléphone dans OSM.","Dernier événement : non trouvé","Source : https://groupeamadeus.com"],"osm-1141575415":["Type : Lieu de réception","Ville : Rosny-sur-Seine (78)","Groupe Amadeus (site partagé avec Le Clos de l'Orangerie). Pas d'email ni téléphone dans OSM.","Dernier événement : non trouvé","Source : https://groupeamadeus.com/le-village-de-sully"],"osm-13019241402":["Type : Lieu de réception","Ville : Richebourg (78)","Pas d'email ni téléphone dans OSM.","Dernier événement : non trouvé","Source : https://pierresdhistoire.com/domaines/richebourg"],"osm-13089512701":["Type : Lieu de réception","Ville : Mauvoisin (78)","Pas d'email ni téléphone dans OSM.","Dernier événement : non trouvé","Source : https://mauvoisin.fr"],"osm-13260163498":["Type : Lieu de réception","Pas de site dans OSM : chercher Instagram/Google. Pas d'email ni téléphone dans OSM.","Dernier événement : non trouvé"],"osm-132747454":["Type : Lieu de réception","Site = annuaire mariages.net, pas le site du lieu. Pas d'email ni téléphone dans OSM.","Dernier événement : non trouvé","Source : https://www.mariages.net"],"osm-13415739735":["Type : Lieu de réception","Ville : Les Mesnuls (78)","Pas d'email ni téléphone dans OSM.","Dernier événement : non trouvé","Source : https://ledomainedesfontenelles.com/evenements-particuliers.php"],"osm-14042473102":["Type : Lieu de réception","Ville : Jouy-le-Moutier (78)","Pas de site dans OSM. Pas d'email ni téléphone dans OSM.","Dernier événement : non trouvé"],"osm-14272942434":["Type : Lieu de réception","Ville : Vernouillet (78)","Pas de téléphone dans OSM.","Dernier événement : non trouvé","Source : https://lascene78.com"],"osm-144338714":["Type : Lieu de réception","Ville : Longnes (78)","Pas d'email ni téléphone dans OSM.","Dernier événement : non trouvé","Source : https://domainedesclosvallees.com"],"osm-1455735829":["Type : Lieu de réception","Pas d'email ni téléphone dans OSM.","Dernier événement : non trouvé","Source : https://chateausaintleger.fr"],"osm-278783576":["Type : Lieu de réception","Pas de téléphone dans OSM.","Dernier événement : non trouvé","Source : https://manoirdesfoulons.com"],"osm-580484624":["Type : Lieu de réception","Pas d'email ni téléphone dans OSM.","Dernier événement : non trouvé","Source : https://moulindetesse.com"],"osm-5839571900":["Type : Lieu de réception","Ville : Meulan (78)","Site = page mairie (location de salle), pas le site du lieu. Pas d'email ni téléphone dans OSM.","Dernier événement : non trouvé","Source : https://www.ville-meulan.fr"],"osm-6747218512":["Type : Lieu de réception","Ville : La Villeneuve-en-Chevrie (78)","Pas d'email ni téléphone dans OSM.","Dernier événement : non trouvé","Source : https://lagrangedesmollieres.fr"],"osm-87674094":["Type : Lieu de réception","Ville : Poissy (78)","Centre de conférences, pas de site dans OSM. Pas d'email ni téléphone dans OSM.","Dernier événement : non trouvé"],"rech-302382858":["Activité : Organisation d'événements, salons, congrès","Taille : 20-49 salariés, CA ~11.4 M€","Organise des événements régulièrement (activité du secteur ou page agenda)","Date de l'événement : non trouvée sur le site","À proposer : partenariat prescripteur : location de mobilier et traiteur pour leurs clients","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-306140039":["Activité : Promotion immobilière","Taille : 50-99 salariés, CA ~67 M€","Dirigeant : Christophe CAPELLI (Président du conseil d’administration et directeur général)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-308077080":["Activité : Promotion immobilière","Taille : 50-99 salariés","Dirigeant : Damien ROLLOY (Directeur Général)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.promogim.fr/carrieres"],"rech-315842864":["Activité : Design/archi","Taille : 50-99 salariés, CA ~15.9 M€","Dirigeant : Oriane REINSBACH (TRISTANI) (Président de SAS)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-317924462":["Activité : Industrie pharmaceutique","Taille : 50-99 salariés, CA ~32.7 M€","Dirigeant : Emilie DOUCET (THOQUENNE) (Directeur général délégué)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-320496367":["Activité : Concession auto","Taille : 50-99 salariés, CA ~80 M€","Dirigeant : Gregoire IZIK (IZIK) (Gérant)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : location de mobilier (chaises, tables) ou traiteur pour leurs réceptions","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.abvv.fr/histoire-fr-fr.htm"],"rech-321131377":["Activité : Expertise comptable","Taille : 50-99 salariés, CA ~11.2 M€","Dirigeant : Omar AL SIBAAIE (Gérant)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-324047026":["Activité : Technique et production de spectacles","Taille : 6-9 salariés","Dirigeant : Ana ROCAMORA GONZALEZ (Président de SAS)","Organise des événements régulièrement (activité du secteur ou page agenda)","Date de l'événement : non trouvée sur le site","À proposer : partenariat prescripteur : location de mobilier et traiteur pour leurs clients","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.audioscene.fr/carrieres/"],"rech-326226115":["Activité : Avocats et notaires","Taille : 20-49 salariés, CA ~27.5 M€","Dirigeant : Sebastien PINOT (Président du directoire)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-327645115":["Activité : Promotion immobilière","Taille : 20-49 salariés","Événement prévu détecté sur le site : lancement (à confirmer à l'appel)","Date de l'événement : non trouvée sur le site","À proposer : prestation complète (traiteur + décoration + mobilier)","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://fair-promotion.fr/"],"rech-329142863":["Activité : Construction de bâtiments","Taille : 10-19 salariés, CA ~2 M€","Dirigeant : Emmanuel LOPES (Gérant)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : location de mobilier (chaises, tables) ou traiteur pour leurs réceptions","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.ldt.fr/nos-agences/constructeur-maisons-laffitte/"],"rech-330084781":["Activité : Formation continue","Taille : 10-19 salariés, CA ~4.7 M€","Dirigeant : Albert AMAR (Président de SAS)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-331191825":["Activité : Expertise comptable","Taille : 20-49 salariés, CA ~8.5 M€","Dirigeant : Philippe LAFITTE (Directeur Général)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-331759118":["Activité : Design/archi","Taille : 50-99 salariés, CA ~12.9 M€","Dirigeant : Jany ARNAL (Président de SAS)","Mention « 40 ans » sur le site : peut être l'ancienneté de l'entreprise, pas un événement (à vérifier)","Date de l'événement : non trouvée sur le site","À proposer : prestation complète (traiteur + décoration + mobilier)","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.majorelle.fr/mentions-legales"],"rech-332590322":["Activité : Concession auto","Taille : 50-99 salariés, CA ~52.4 M€","Dirigeant : Nicolas BOUYER (Directeur Général)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-339954802":["Activité : Avocats et notaires","Taille : 10-19 salariés, CA ~2.3 M€","Dirigeant : Arnaud DEGOUZON (Directeur Général)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://djiane-girotdelanglade-muller-degouzon-meulanenyvelines.notaires.fr/informations-et-conseils-19-ter-arquebuse-notaires.html"],"rech-343903639":["Activité : Organisation d'événements, salons, congrès","Taille : 20-49 salariés","Dirigeant : Moche SLAMA (Président de SAS)","Organise des événements régulièrement (activité du secteur ou page agenda)","Date de l'événement : non trouvée sur le site","À proposer : partenariat prescripteur : location de mobilier et traiteur pour leurs clients","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.equatour.fr/"],"rech-350758033":["Activité : Design/archi","Taille : 50-99 salariés, CA ~12.5 M€","Dirigeant : Hubert BLAY DE MALHERBE (Président de SAS)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-378528863":["Activité : Commerce de parfumerie et cosmétique","Taille : 20-49 salariés","Dirigeant : Thomas KAYE (Président du conseil d’administration)","Événement récent détecté sur le site : lancement (à confirmer à l'appel)","Date de l'événement : non trouvée sur le site","À proposer : prestation complète (traiteur + décoration + mobilier)","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.kapa-reynolds.com/"],"rech-378794796":["Activité : Organisation d'événements, salons, congrès","Taille : 10-19 salariés, CA ~10.5 M€","Dirigeant : Paul BOURY (Président de SAS)","Organise des événements régulièrement (activité du secteur ou page agenda)","Date de l'événement : non trouvée sur le site","À proposer : partenariat prescripteur : location de mobilier et traiteur pour leurs clients","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-379373897":["Activité : Agence de publicité","Taille : 10-19 salariés, CA ~5.1 M€","Dirigeant : Thomas DEROUAULT (Directeur Général)","Organise des événements régulièrement (activité du secteur ou page agenda)","Date de l'événement : non trouvée sur le site","À proposer : traiteur + location de mobilier","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-379566771":["Activité : Conseil aux entreprises","Taille : 20-49 salariés, CA ~3.9 M€","Dirigeant : Vincent BEAUCOURT (Directeur Général)","Événement récent détecté sur le site : seminaire (à confirmer à l'appel)","Date de l'événement : 02-03-2026 (date trouvée dans la page, à vérifier)","À proposer : traiteur + location de mobilier (chaises, tables)","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.katalyse.com/les-actualites-de-katalyse/"],"rech-379866247":["Activité : Conseil en gestion de patrimoine","Taille : 20-49 salariés, CA ~3 M€","Dirigeant : Philippe JOURNO (Gérant)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-380219766":["Activité : Technique et production de spectacles","Taille : 20-49 salariés","Organise des événements régulièrement (activité du secteur ou page agenda)","Date de l'événement : non trouvée sur le site","À proposer : partenariat prescripteur : location de mobilier et traiteur pour leurs clients","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.eurydice.fr/fr/nos-metiers"],"rech-381999283":["Activité : Organisation d'événements, salons, congrès","Taille : 20-49 salariés","Organise des événements régulièrement (activité du secteur ou page agenda)","Date de l'événement : non trouvée sur le site","À proposer : partenariat prescripteur : location de mobilier et traiteur pour leurs clients","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.2b.agency/"],"rech-382615961":["Activité : Agence immobilière","Taille : 20-49 salariés, CA ~3.3 M€","Dirigeant : Francois LAMIRAND (Gérant)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-383715968":["Activité : Promotion immobilière","Taille : 3-5 salariés","Dirigeant : Frederique LEBEL (Président de SAS)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://sercib.com/"],"rech-388589269":["Activité : Expertise comptable","Taille : 50-99 salariés, CA ~6.9 M€","Dirigeant : Pierre FERRACCI (Président du conseil d’administration et directeur général)","Organise des événements régulièrement (activité du secteur ou page agenda)","Date de l'événement : non trouvée sur le site","À proposer : traiteur + location de mobilier","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.secafi.com/"],"rech-388867426":["Activité : Promotion immobilière","Taille : 100-199 salariés","Dirigeant : Fabien CUMINAL (Directeur Général)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-389120049":["Activité : Organisation d'événements, salons, congrès","Taille : 100-199 salariés","Dirigeant : Bernard CREUWELS (Directeur Général)","Organise des événements régulièrement (activité du secteur ou page agenda)","Date de l'événement : non trouvée sur le site","À proposer : partenariat prescripteur : location de mobilier et traiteur pour leurs clients","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-391097540":["Activité : Organisation d'événements, salons, congrès","Taille : 20-49 salariés, CA ~8.6 M€","Dirigeant : Delphine BAUDOUIN (Gérant)","Organise des événements régulièrement (activité du secteur ou page agenda)","Date de l'événement : non trouvée sur le site","À proposer : partenariat prescripteur : location de mobilier et traiteur pour leurs clients","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-391626801":["Activité : Promotion immobilière","Taille : 10-19 salariés, CA ~2.5 M€","Dirigeant : Daniel BIARD (BIARD) (Gérant)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-391825874":["Activité : Organisation d'événements, salons, congrès","Taille : 3-5 salariés","Dirigeant : Béatrice DUVERT (CORDONNIER) (Président de SAS)","Organise des événements régulièrement (activité du secteur ou page agenda)","Date de l'événement : non trouvée sur le site","À proposer : partenariat prescripteur : location de mobilier et traiteur pour leurs clients","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-392774477":["Activité : Commerce de gros","Taille : 20-49 salariés, CA ~12.9 M€","Dirigeant : Alain VIDAL (Gérant)","Organise des événements régulièrement (activité du secteur ou page agenda)","Date de l'événement : non trouvée sur le site","À proposer : location de mobilier (chaises, tables) ou traiteur pour leurs réceptions","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.alann-marks.com/qui-sommes-nous"],"rech-393367867":["Activité : Formation continue","Taille : 20-49 salariés, CA ~23.7 M€","Dirigeant : Jonathan AZOULAY (Gérant)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-393488531":["Activité : Ingénierie","Taille : 50-99 salariés, CA ~10.1 M€","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://namixis.net/"],"rech-394165575":["Activité : Organisation d'événements, salons, congrès","Taille : 20-49 salariés","Organise des événements régulièrement (activité du secteur ou page agenda)","Date de l'événement : non trouvée sur le site","À proposer : partenariat prescripteur : location de mobilier et traiteur pour leurs clients","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://thegoodexperience.com/"],"rech-399146281":["Activité : Organisation d'événements, salons, congrès","Taille : 20-49 salariés, CA ~3.5 M€","Organise des événements régulièrement (activité du secteur ou page agenda)","Date de l'événement : non trouvée sur le site","À proposer : partenariat prescripteur : location de mobilier et traiteur pour leurs clients","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-402423420":["Activité : Agence de publicité","Taille : 250-499 salariés","Événement récent détecté sur le site : seminaire (à confirmer à l'appel)","Date de l'événement : non trouvée sur le site","À proposer : traiteur + location de mobilier (chaises, tables)","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://wmhproject.com/actualites/"],"rech-403601750":["Activité : Agence de publicité","Taille : 20-49 salariés","Événement récent détecté sur le site : afterwork (à confirmer à l'appel)","Date de l'événement : non trouvée sur le site","À proposer : traiteur + location de mobilier (chaises, tables)","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.legiteam.fr/Evenements-Formations-Rencontres-Des-evenements-sur-mesure"],"rech-409266228":["Activité : Promotion immobilière","Taille : 10-19 salariés, CA ~8.4 M€","Dirigeant : Marie-Astrid QUENTIN (Président de SAS)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-409879863":["Activité : CVC","Taille : 50-99 salariés, CA ~26.5 M€","Dirigeant : Marylène BARON (Directeur Général)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-410624019":["Activité : Commerce de gros","Taille : 6-9 salariés, CA ~16.7 M€","Dirigeant : Mostapha BESSALAH (Président de SAS)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-411415565":["Activité : Assurance","Taille : 50-99 salariés, CA ~51.9 M€","Dirigeant : Emmanuel BOURIEZ (Directeur Général)","Organise des événements régulièrement (activité du secteur ou page agenda)","Date de l'événement : non trouvée sur le site","À proposer : traiteur + location de mobilier","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-411734858":["Activité : Organisation d'événements, salons, congrès","Taille : 10-19 salariés","Dirigeant : Audrey LAUMONERIE (Président de SAS)","Mention « 25 ans » sur le site : peut être l'ancienneté de l'entreprise, pas un événement (à vérifier)","Date de l'événement : non trouvée sur le site","À proposer : partenariat prescripteur : location de mobilier et traiteur pour leurs clients","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.challenge-partners.fr/contenu.asp?lang=fr&r=qui-sommes-nous&id=20"],"rech-413721119":["Activité : Commerce de biens de consommation","Taille : 20-49 salariés","Dirigeant : Guillaume GIROUT (Gérant)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://dagg.fr/"],"rech-413958646":["Activité : Agence de publicité","Taille : 50-99 salariés, CA ~7.9 M€","Dirigeant : Marine CHAPUIS (Directeur Général)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-414057992":["Activité : Agence immobilière","Taille : 50-99 salariés, CA ~51.5 M€","Dirigeant : Richard TZIPINE BERGER (Directeur Général)","Événement récent détecté sur le site : cocktail (à confirmer à l'appel)","Date de l'événement : 14 janvier 2026 (date trouvée dans la page, à vérifier)","À proposer : traiteur + location de mobilier (chaises, tables)","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.barnes-international.com/"],"rech-415149830":["Activité : Formation continue","Taille : 50-99 salariés","Dirigeant : Jerome BELZACKI (Président de SAS)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-418935862":["Activité : Ingénierie","Taille : 50-99 salariés, CA ~6.8 M€","Dirigeant : Roland LE ROUX (Président de SAS)","Mention « 25 ans » sur le site : peut être l'ancienneté de l'entreprise, pas un événement (à vérifier)","Date de l'événement : non trouvée sur le site","À proposer : prestation complète (traiteur + décoration + mobilier)","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://citae.fr/"],"rech-421166778":["Activité : Organisation d'événements, salons, congrès","Taille : 10-19 salariés, CA ~4.6 M€","Dirigeant : Evelyne LAYANI (COHEN) (Président de SAS)","Organise des événements régulièrement (activité du secteur ou page agenda)","Date de l'événement : non trouvée sur le site","À proposer : partenariat prescripteur : location de mobilier et traiteur pour leurs clients","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-422002949":["Activité : Construction de bâtiments","Taille : 10-19 salariés, CA ~3.9 M€","Dirigeant : Veysel ACAR (Directeur Général)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom","Source : http://www.sybat.fr/recrutement/"],"rech-422322479":["Activité : Organisation d'événements, salons, congrès","Taille : 10-19 salariés, CA ~9.2 M€","Dirigeant : Oliver CASSEDANNE (Directeur Général)","Organise des événements régulièrement (activité du secteur ou page agenda)","Date de l'événement : non trouvée sur le site","À proposer : partenariat prescripteur : location de mobilier et traiteur pour leurs clients","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-422399238":["Activité : Conseil aux entreprises","Taille : 50-99 salariés, CA ~11.2 M€","Dirigeant : Philippe DELWARDE (Président de SAS)","Événement récent détecté sur le site : anniversaire (à confirmer à l'appel)","Date de l'événement : 24 septembre 2026 (date trouvée dans la page, à vérifier)","À proposer : prestation complète (traiteur + décoration + mobilier)","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://quaternaire.fr/"],"rech-423303882":["Activité : Conseil aux entreprises","Taille : 3-5 salariés","Dirigeant : Olivier NICOLLE (Président de SAS)","Événement récent détecté sur le site : inauguration (à confirmer à l'appel)","Date de l'événement : non trouvée sur le site","À proposer : prestation complète (traiteur + décoration + mobilier)","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.texalliancegroupe.eu/blog"],"rech-423304518":["Activité : Agence immobilière","Taille : 50-99 salariés, CA ~6.3 M€","Dirigeant : Nicolas BEAURAIN (Gérant)","Organise des événements régulièrement (activité du secteur ou page agenda)","Date de l'événement : non trouvée sur le site","À proposer : location de mobilier (chaises, tables) ou traiteur pour leurs réceptions","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.maeva.com/fr-fr/offres/evenement-groupe"],"rech-429309354":["Activité : Organisation d'événements, salons, congrès","Taille : 50-99 salariés","Dirigeant : Jean-Cyrille BOUTMY (Président de SAS)","Organise des événements régulièrement (activité du secteur ou page agenda)","Date de l'événement : non trouvée sur le site","À proposer : partenariat prescripteur : location de mobilier et traiteur pour leurs clients","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-430392746":["Activité : Concession auto","Taille : 20-49 salariés, CA ~35.3 M€","Dirigeant : David COGARD (Directeur Général)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-430439398":["Activité : Agro","Taille : 20-49 salariés, CA ~8.8 M€","Dirigeant : Dan BELLAICHE (Directeur Général)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-432714079":["Activité : Expertise comptable","Taille : 20-49 salariés, CA ~3.4 M€","Dirigeant : Dominique CHEVALLIER (Président de SAS)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.dc-conseils.com/recrutement"],"rech-432831550":["Activité : Agence de publicité","Taille : 50-99 salariés, CA ~33.6 M€","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-433722147":["Activité : Fabrication de cosmétiques","Taille : 10-19 salariés, CA ~64.8 M€","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-434838314":["Activité : Avocats et notaires","Taille : 20-49 salariés, CA ~18.8 M€","Dirigeant : Matthieu HENON (Directeur Général)","Mention « 10 ans » sur le site : peut être l'ancienneté de l'entreprise, pas un événement (à vérifier)","Date de l'événement : 16/10/2026 (date trouvée dans la page, à vérifier)","À proposer : prestation complète (traiteur + décoration + mobilier)","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.seban-associes.avocat.fr/actualites/la-vie-du-cabinet/"],"rech-435339114":["Activité : Agence immobilière","Taille : 10-19 salariés, CA ~4 M€","Dirigeant : Raphael AMOURETTI (Président de SAS)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-435369277":["Activité : Promotion immobilière","Taille : 50-99 salariés, CA ~18.3 M€","Événement récent détecté sur le site : inauguration (à confirmer à l'appel)","Date de l'événement : 07/10/2026 (date trouvée dans la page, à vérifier)","À proposer : prestation complète (traiteur + décoration + mobilier)","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.spirit-immobilier.fr/"],"rech-440449916":["Activité : Agence immobilière","Taille : 20-49 salariés, CA ~4.6 M€","Dirigeant : Herve DE GALBERT (Président de SAS)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://liins.fr/conseil/recrutement/"],"rech-440639425":["Activité : Design/archi","Taille : 20-49 salariés, CA ~11.3 M€","Dirigeant : Jean DENIOT (Président de SAS)","Événement récent détecté sur le site : cocktail (à confirmer à l'appel)","Date de l'événement : non trouvée sur le site","À proposer : traiteur + location de mobilier (chaises, tables)","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.deniot.com/press-room/"],"rech-440826667":["Activité : Formation continue","Taille : 6-9 salariés","Dirigeant : Ahmed TIMSIT (Gérant)","Mention « 25 ans » sur le site : peut être l'ancienneté de l'entreprise, pas un événement (à vérifier)","Date de l'événement : non trouvée sur le site","À proposer : prestation complète (traiteur + décoration + mobilier)","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://apsie.fr/"],"rech-441398617":["Activité : Enseignement supérieur","Taille : 50-99 salariés","Événement prévu détecté sur le site : portes ouvertes (à confirmer à l'appel)","Date de l'événement : 21 novembre 2026 (date trouvée dans la page, à vérifier)","À proposer : traiteur + location de mobilier (chaises, tables)","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.holistea.fr/"],"rech-441514361":["Activité : Agence de publicité","Taille : 20-49 salariés","Événement récent détecté sur le site : lancement (à confirmer à l'appel)","Date de l'événement : non trouvée sur le site","À proposer : prestation complète (traiteur + décoration + mobilier)","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.globe-groupe.com/fr/a-propos/"],"rech-441692605":["Activité : Technique et production de spectacles","Taille : 20-49 salariés","Événement récent détecté sur le site : soiree (à confirmer à l'appel)","Date de l'événement : non trouvée sur le site","À proposer : partenariat prescripteur : location de mobilier et traiteur pour leurs clients","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.regietek.com/"],"rech-442812301":["Activité : Avocats et notaires","Taille : 50-99 salariés","Dirigeant : Claude AGUTTES (Président de SAS)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.aguttes.com/la-maison/nous-rejoindre"],"rech-443006861":["Activité : Technique et production de spectacles","Taille : 50-99 salariés","Organise des événements régulièrement (activité du secteur ou page agenda)","Date de l'événement : non trouvée sur le site","À proposer : partenariat prescripteur : location de mobilier et traiteur pour leurs clients","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-443948773":["Activité : Promotion immobilière","Taille : 20-49 salariés, CA ~8.2 M€","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.carrere-promotion.com/"],"rech-443978093":["Activité : Organisation d'événements, salons, congrès","Taille : 10-19 salariés, CA ~3.7 M€","Dirigeant : Nancy PORTALES (Directeur Général)","Organise des événements régulièrement (activité du secteur ou page agenda)","Date de l'événement : non trouvée sur le site","À proposer : partenariat prescripteur : location de mobilier et traiteur pour leurs clients","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-444318174":["Activité : Électricité","Taille : 20-49 salariés, CA ~5.9 M€","Dirigeant : Joel CLAUDEPIERRE (Personne ayant le pouvoir d’engager à titre habituel la société)","Mention « 20 ans » sur le site : peut être l'ancienneté de l'entreprise, pas un événement (à vérifier)","Date de l'événement : non trouvée sur le site","À proposer : prestation complète (traiteur + décoration + mobilier)","Ligne : standard de l'entreprise, demande la personne par son nom","Source : http://www.fareneit.fr/equipe"],"rech-445369978":["Activité : Formation continue","Taille : 20-49 salariés","Événement récent détecté sur le site : portes ouvertes (à confirmer à l'appel)","Date de l'événement : non trouvée sur le site","À proposer : traiteur + location de mobilier (chaises, tables)","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.cdaf-formation.fr/"],"rech-448360131":["Activité : Concession auto","Taille : 10-19 salariés, CA ~6.3 M€","Dirigeant : Olivier MASSOUTRE (Président de SAS)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-448622845":["Activité : Promotion immobilière","Taille : 20-49 salariés","Dirigeant : Matthieu VILLAND (Directeur Général)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-450012935":["Activité : Avocats et notaires","Taille : 10-19 salariés, CA ~5.4 M€","Dirigeant : Virginie BOULNOIS (Gérant)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-450623103":["Activité : Agence immobilière","Taille : 50-99 salariés, CA ~8.9 M€","Dirigeant : Michel PELEGE (Président de SAS)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.vaneau.fr/fr/carrieres"],"rech-451576920":["Activité : Organisation d'événements, salons, congrès","Taille : 20-49 salariés, CA ~9.9 M€","Événement récent détecté sur le site : gala (à confirmer à l'appel)","Date de l'événement : 15 octobre 2026 (date trouvée dans la page, à vérifier)","À proposer : partenariat prescripteur : location de mobilier et traiteur pour leurs clients","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.solutions-evenements.fr/"],"rech-451785414":["Activité : Technique et production de spectacles","Taille : 20-49 salariés","Dirigeant : Delphine MARTIN (Président de SAS)","Organise des événements régulièrement (activité du secteur ou page agenda)","Date de l'événement : non trouvée sur le site","À proposer : partenariat prescripteur : location de mobilier et traiteur pour leurs clients","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-452650922":["Activité : Promotion immobilière","Taille : 10-19 salariés, CA ~4.1 M€","Dirigeant : Ghislain PIRONNEAU (Gérant)","Événement récent détecté sur le site : inauguration (à confirmer à l'appel)","Date de l'événement : non trouvée sur le site","À proposer : prestation complète (traiteur + décoration + mobilier)","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://imodev.fr/"],"rech-453290678":["Activité : Conseil en communication","Taille : 50-99 salariés","Dirigeant : Vincent BACULARD (Président de SAS)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://exirys.fr/"],"rech-453887135":["Activité : Expertise comptable","Taille : 20-49 salariés, CA ~3.5 M€","Dirigeant : Francois D'HAYER (Gérant)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://lamacompta.co/agh"],"rech-477829964":["Activité : Organisation d'événements, salons, congrès","Taille : 10-19 salariés, CA ~6.5 M€","Dirigeant : Céline IZARIE (PULIDO) (Gérant)","Organise des événements régulièrement (activité du secteur ou page agenda)","Date de l'événement : non trouvée sur le site","À proposer : partenariat prescripteur : location de mobilier et traiteur pour leurs clients","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-478202419":["Activité : Industrie pharmaceutique","Taille : 50-99 salariés, CA ~30.5 M€","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-478275175":["Activité : Production audiovisuelle","Taille : 50-99 salariés, CA ~21.3 M€","Dirigeant : Maxime SAADA (Président de SAS)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : mobile, probablement directe","Source : https://flab-prod.fr/index.php/contact/"],"rech-478958762":["Activité : Conseil en gestion de patrimoine","Taille : 50-99 salariés, CA ~12.8 M€","Dirigeant : Stanislas DE VASSELOT DE RÉGNÉ (Directeur Général)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-479112252":["Activité : Agence immobilière","Taille : 20-49 salariés, CA ~3.9 M€","Dirigeant : Rodolphe MANASTERSKI (Président de SAS)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.advenis.com/carrieres/"],"rech-480361336":["Activité : Formation continue","Taille : 20-49 salariés, CA ~6.3 M€","Dirigeant : Gérald JASMIN (Président de SAS)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-482761160":["Activité : Formation continue","Taille : 250-499 salariés","Événement prévu détecté sur le site : seminaire (à confirmer à l'appel)","Date de l'événement : 29 octobre 2026 (date trouvée dans la page, à vérifier)","À proposer : traiteur + location de mobilier (chaises, tables)","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.orsys.fr/solutions/seminaires"],"rech-485316533":["Activité : Industrie pharmaceutique","Taille : 20-49 salariés, CA ~36 M€","Dirigeant : Olivier DUCLOS (Président de SAS)","Événement récent détecté sur le site : lancement (à confirmer à l'appel)","Date de l'événement : non trouvée sur le site","À proposer : prestation complète (traiteur + décoration + mobilier)","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.laboratoirecristers.com/"],"rech-488120452":["Activité : Club sportif","Taille : 50-99 salariés, CA ~15.5 M€","Dirigeant : David KAHN (Autre)","Événement prévu détecté sur le site : soiree (à confirmer à l'appel)","Date de l'événement : 18 octobre 2026 (date trouvée dans la page, à vérifier)","À proposer : prestation complète (traiteur + décoration + mobilier)","Source : https://parisbasketball.com/"],"rech-488306036":["Activité : Production audiovisuelle","Taille : 10-19 salariés, CA ~5.5 M€","Dirigeant : Dominique BESNEHARD (Président de SAS)","Mention « 30 ans » sur le site : peut être l'ancienneté de l'entreprise, pas un événement (à vérifier)","Date de l'événement : non trouvée sur le site","À proposer : prestation complète (traiteur + décoration + mobilier)","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.monvoisinproductions.com/fr/actualites"],"rech-488540790":["Activité : Agence de publicité","Taille : 50-99 salariés, CA ~27.9 M€","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-489070755":["Activité : Organisation d'événements, salons, congrès","Taille : 20-49 salariés","Événement prévu détecté sur le site : seminaire (à confirmer à l'appel)","Date de l'événement : non trouvée sur le site","À proposer : partenariat prescripteur : location de mobilier et traiteur pour leurs clients","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.weyou-group.com/nos-evenements/"],"rech-489116350":["Activité : Organisation d'événements, salons, congrès","Taille : 10-19 salariés, CA ~10.4 M€","Dirigeant : Julien CROCHARD (Directeur Général)","Événement récent détecté sur le site : seminaire (à confirmer à l'appel)","Date de l'événement : non trouvée sur le site","À proposer : partenariat prescripteur : location de mobilier et traiteur pour leurs clients","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://stand-ing.com/"],"rech-489757757":["Activité : Expertise comptable","Taille : 10-19 salariés, CA ~3 M€","Dirigeant : Chloe BARAT (Gérant)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.groupephileo.fr/carrieres/"],"rech-490323615":["Activité : Formation continue","Taille : 20-49 salariés, CA ~13.3 M€","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-490748670":["Activité : Conseil aux entreprises","Taille : 50-99 salariés, CA ~13.3 M€","Dirigeant : Francois MOREAU (Président de SAS)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-492580550":["Activité : Organisation d'événements, salons, congrès","Taille : 10-19 salariés","Dirigeant : Nicolas GODARD (Gérant)","Organise des événements régulièrement (activité du secteur ou page agenda)","Date de l'événement : non trouvée sur le site","À proposer : partenariat prescripteur : location de mobilier et traiteur pour leurs clients","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-492641295":["Activité : Concession auto","Taille : 10-19 salariés, CA ~30.7 M€","Dirigeant : Maxime HAVARD (Directeur Général)","Événement récent détecté sur le site : inauguration (à confirmer à l'appel)","Date de l'événement : 09 octobre 2026 (date trouvée dans la page, à vérifier)","À proposer : prestation complète (traiteur + décoration + mobilier)","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.sofibrie.fr/actualites-de-sofibrie/"],"rech-492842349":["Activité : Organisation d'événements, salons, congrès","Taille : 50-99 salariés, CA ~16.8 M€","Dirigeant : Maxime DURAND (Gérant)","Mention « 100 ans » sur le site : peut être l'ancienneté de l'entreprise, pas un événement (à vérifier)","Date de l'événement : 20 juillet 2026 (date trouvée dans la page, à vérifier)","À proposer : partenariat prescripteur : location de mobilier et traiteur pour leurs clients","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.gl-events.com/fr"],"rech-492940499":["Activité : Conseil en gestion de patrimoine","Taille : 10-19 salariés, CA ~6.1 M€","Dirigeant : Fidel MARTIN (Président de SAS)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-493919146":["Activité : Organisation d'événements, salons, congrès","Taille : 20-49 salariés, CA ~10.2 M€","Organise des événements régulièrement (activité du secteur ou page agenda)","Date de l'événement : non trouvée sur le site","À proposer : partenariat prescripteur : location de mobilier et traiteur pour leurs clients","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-494051394":["Activité : Conseil aux entreprises","Taille : 20-49 salariés, CA ~3.6 M€","Dirigeant : Jean-Baptiste DE CHARETTE DE LA CONTRIE (Directeur Général)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : location de mobilier (chaises, tables) ou traiteur pour leurs réceptions","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.socialea.fr/"],"rech-495072605":["Activité : Organisation d'événements, salons, congrès","Taille : 3-5 salariés","Dirigeant : Frédéric DERSOIR (Gérant)","Organise des événements régulièrement (activité du secteur ou page agenda)","Date de l'événement : non trouvée sur le site","À proposer : partenariat prescripteur : location de mobilier et traiteur pour leurs clients","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-495243966":["Activité : Organisation d'événements, salons, congrès","Taille : 10-19 salariés, CA ~7.5 M€","Événement récent détecté sur le site : voeux (à confirmer à l'appel)","Date de l'événement : non trouvée sur le site","À proposer : partenariat prescripteur : location de mobilier et traiteur pour leurs clients","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://eko-events.fr/savoir-faire/events/"],"rech-495289399":["Activité : Agence de publicité","Taille : 20-49 salariés, CA ~3.5 M€","Dirigeant : Fabrice FOURNIER (Président de SAS)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-495354805":["Activité : Formation continue","Taille : 50-99 salariés, CA ~9.6 M€","Dirigeant : Ouramdane ABDAT (Directeur Général)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-497635292":["Activité : Agence de publicité","Taille : 50-99 salariés, CA ~14.2 M€","Organise des événements régulièrement (activité du secteur ou page agenda)","Date de l'événement : non trouvée sur le site","À proposer : traiteur + location de mobilier","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-498719582":["Activité : Transport","Taille : 50-99 salariés, CA ~9.4 M€","Dirigeant : Pascal THERY (Président de SAS)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-500517776":["Activité : Agence de publicité","Taille : 20-49 salariés, CA ~27.1 M€","Dirigeant : Flore FAUCONNIER (Administrateur)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-501170468":["Activité : Formation continue","Taille : 20-49 salariés","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.evogest.fr/blog/"],"rech-501184774":["Activité : Avocats et notaires","Taille : 10-19 salariés, CA ~4.2 M€","Dirigeant : Christophe ANCEL (Gérant et associé indéfiniment responsable)","Aucun événement repéré sur le site","Date de l'événement : 24 novembre 2026 (date trouvée dans la page, à vérifier)","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.mjc2a.fr/anonym/mandat/detail/10252505902/teamlok-sas"],"rech-502177421":["Activité : Organisation d'événements, salons, congrès","Taille : 10-19 salariés, CA ~3.7 M€","Dirigeant : Sophie DELPUECH (Président de SAS)","Organise des événements régulièrement (activité du secteur ou page agenda)","Date de l'événement : non trouvée sur le site","À proposer : partenariat prescripteur : location de mobilier et traiteur pour leurs clients","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-502197551":["Activité : Formation continue","Taille : 20-49 salariés","Mention « 15 ans » sur le site : peut être l'ancienneté de l'entreprise, pas un événement (à vérifier)","Date de l'événement : non trouvée sur le site","À proposer : prestation complète (traiteur + décoration + mobilier)","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://excellensformation.com/"],"rech-502803455":["Activité : Avocats et notaires","Taille : 50-99 salariés, CA ~24.8 M€","Dirigeant : Marie CASALONGA (Président de SAS)","Mention « 10 ans » sur le site : peut être l'ancienneté de l'entreprise, pas un événement (à vérifier)","Date de l'événement : 25 juin 2026 (date trouvée dans la page, à vérifier)","À proposer : prestation complète (traiteur + décoration + mobilier)","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.casalonga.com/"],"rech-504141854":["Activité : Agence de publicité","Taille : 10-19 salariés, CA ~3.4 M€","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : mobile, probablement directe","Source : https://www.aquaplante.fr/content/37-recrutement"],"rech-504162439":["Activité : Conseil en gestion de patrimoine","Taille : 20-49 salariés, CA ~61.2 M€","Dirigeant : Jean-Maximilien VANCAYEZEELE (Président de SAS)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-508402278":["Activité : Promotion immobilière","Taille : 20-49 salariés, CA ~4.6 M€","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-508490000":["Activité : Avocats et notaires","Taille : 10-19 salariés, CA ~5 M€","Dirigeant : Jerome CABOOTER (Gérant)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://ajilink.fr/nous-rejoindre-administrateurs-judiciaires-prevention/"],"rech-510022957":["Activité : Conseil aux entreprises","Taille : 20-49 salariés","Dirigeant : Guillaume BONNIAUD (Directeur Général)","Événement prévu détecté sur le site : seminaire (à confirmer à l'appel)","Date de l'événement : non trouvée sur le site","À proposer : traiteur + location de mobilier (chaises, tables)","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://esprimed.fr/2026/07/24/seminaire-esprimed-edition-2026-la-medecine-nucleaire-moteur-du-parcours-de-soin/"],"rech-510539018":["Activité : Agence immobilière","Taille : 50-99 salariés, CA ~22.8 M€","Dirigeant : Regis ABGRALL (Administrateur)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-512021734":["Activité : Production audiovisuelle","Taille : 20-49 salariés, CA ~9.6 M€","Dirigeant : Samuel KISSOUS (Président de SAS)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel"],"rech-515013506":["Activité : Organisation d'événements, salons, congrès","Taille : 50-99 salariés, CA ~13 M€","Dirigeant : Gregory BRETON (Directeur Général)","Organise des événements régulièrement (activité du secteur ou page agenda)","Date de l'événement : non trouvée sur le site","À proposer : partenariat prescripteur : location de mobilier et traiteur pour leurs clients","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.advbe.com/fr/qui-somme-nous/carriere"],"rech-517575445":["Activité : Agence de publicité","Taille : 50-99 salariés, CA ~18.8 M€","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-522780014":["Activité : Agence immobilière","Taille : 10-19 salariés","Dirigeant : Nicolas MOUREAUX (Directeur Général)","Mention « 20 ans » sur le site : peut être l'ancienneté de l'entreprise, pas un événement (à vérifier)","Date de l'événement : non trouvée sur le site","À proposer : prestation complète (traiteur + décoration + mobilier)","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.sextantfrance.fr/"],"rech-524000056":["Activité : Conseil aux entreprises","Taille : 50-99 salariés","Événement récent détecté sur le site : lancement (à confirmer à l'appel)","Date de l'événement : non trouvée sur le site","À proposer : prestation complète (traiteur + décoration + mobilier)","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.delville-management.com/newsroom"],"rech-528286149":["Activité : Conseil aux entreprises","Taille : 10-19 salariés, CA ~29.7 M€","Dirigeant : Isabelle LEBAUPAIN (BASTIDE) (Gérant)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : mobile, probablement directe","Source : https://www.michaelpage.fr/jobs?contract=permanent"],"rech-529206344":["Activité : Promotion immobilière","Taille : 20-49 salariés, CA ~26.2 M€","Dirigeant : Damien HERENG (Gérant)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-532715687":["Activité : Commerce de gros","Taille : 50-99 salariés, CA ~11.9 M€","Dirigeant : Guillaume BUTTY (Président de SAS)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : location de mobilier (chaises, tables) ou traiteur pour leurs réceptions","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.tbrp.com/"],"rech-534068648":["Activité : Commerce de gros","Taille : 20-49 salariés, CA ~16.7 M€","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-534414107":["Activité : Design/archi","Taille : 20-49 salariés, CA ~25.2 M€","Dirigeant : Pascal REYDON (Président de SAS)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-537701807":["Activité : Promotion immobilière","Taille : 10-19 salariés, CA ~2.8 M€","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.alsei-residentiel.com/"],"rech-538184128":["Activité : Conseil en gestion de patrimoine","Taille : 20-49 salariés, CA ~16.3 M€","Dirigeant : Jonathan DONIO (Directeur général délégué)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-539925388":["Activité : Gestion de fonds","Taille : 20-49 salariés","Dirigeant : Fawzi REGUIMI (Gérant)","Événement prévu détecté sur le site : portes ouvertes (à confirmer à l'appel)","Date de l'événement : non trouvée sur le site","À proposer : traiteur + location de mobilier (chaises, tables)","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.ecole-bilingue-diderot.com/actus"],"rech-542063664":["Activité : Avocats et notaires","Taille : 50-99 salariés, CA ~18.5 M€","Dirigeant : Valerie DESANTI (Directeur Général)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-552022824":["Activité : Fabrication de cosmétiques","Taille : 50-99 salariés, CA ~13.3 M€","Dirigeant : Antoine LAMARCHE (Directeur Général)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-552128944":["Activité : Fabrication de cosmétiques","Taille : 50-99 salariés, CA ~43.6 M€","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.payot.com/pages/carrieres"],"rech-562120592":["Activité : Commerce de gros","Taille : 50-99 salariés, CA ~38.4 M€","Dirigeant : Georges PESCHAUD (Président de SAS)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-589806512":["Activité : Concession auto","Taille : 50-99 salariés, CA ~38 M€","Dirigeant : Gerard ALARD (Directeur Général)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-592023345":["Activité : Fabrication de cosmétiques","Taille : 50-99 salariés, CA ~7.9 M€","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-592027635":["Activité : Agence immobilière","Taille : 50-99 salariés, CA ~10.6 M€","Dirigeant : Jean-Edouard MAURY (Président de SAS)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://fr.foncia.com/carrieres"],"rech-662015072":["Activité : Expertise comptable","Taille : 20-49 salariés, CA ~4.7 M€","Dirigeant : Jean-Marie COTTIN (Président de SAS)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-702012980":["Activité : Agence de publicité","Taille : 50-99 salariés, CA ~14.4 M€","Dirigeant : Philippe CHARRIER (Gérant)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-702027293":["Activité : Avocats et notaires","Taille : 10-19 salariés, CA ~3.4 M€","Dirigeant : Charles DAGBA (Gérant)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-722027695":["Activité : Avocats et notaires","Taille : 50-99 salariés, CA ~18.5 M€","Dirigeant : Bernard HAUER (Administrateur)","Organise des événements régulièrement (activité du secteur ou page agenda)","Date de l'événement : non trouvée sur le site","À proposer : traiteur + location de mobilier","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-732046602":["Activité : Agence immobilière","Taille : 50-99 salariés, CA ~18.7 M€","Dirigeant : Vincent BOLLAERT (Gérant)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-751493628":["Activité : Formation continue","Taille : 3-5 salariés","Dirigeant : Mohamed AMAZIAN (Gérant)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.merit-formation.fr/"],"rech-751731522":["Activité : Concession auto","Taille : 50-99 salariés, CA ~99 M€","Dirigeant : Olivier HOSSARD (Président de SAS)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : location de mobilier (chaises, tables) ou traiteur pour leurs réceptions","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.vauban-groupe.fr/"],"rech-753031632":["Activité : Transport","Taille : 50-99 salariés, CA ~11.9 M€","Dirigeant : Laurent LEMOND (Directeur Général)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-788689982":["Activité : Technique et production de spectacles","Taille : 3-5 salariés","Dirigeant : Emmanuel PLEAU (Gérant)","Organise des événements régulièrement (activité du secteur ou page agenda)","Date de l'événement : non trouvée sur le site","À proposer : partenariat prescripteur : location de mobilier et traiteur pour leurs clients","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-788751311":["Activité : Agence immobilière","Taille : 3-5 salariés","Dirigeant : Guillaume DEFRANCE (Président de SAS)","Mention « 20 ans » sur le site : peut être l'ancienneté de l'entreprise, pas un événement (à vérifier)","Date de l'événement : non trouvée sur le site","À proposer : prestation complète (traiteur + décoration + mobilier)","Ligne : mobile, probablement directe","Source : https://www.iidf.fr/"],"rech-791648132":["Activité : Agence immobilière","Taille : 20-49 salariés, CA ~15.4 M€","Dirigeant : Julien HAUSSY (Gérant)","Événement récent détecté sur le site : soiree (à confirmer à l'appel)","Date de l'événement : non trouvée sur le site","À proposer : prestation complète (traiteur + décoration + mobilier)","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.espaces-atypiques.com/actualites/"],"rech-793861089":["Activité : Club sportif","Taille : 20-49 salariés, CA ~5.3 M€","Dirigeant : Frederic DONNADIEU (Président de SAS)","Mention « 100 ans » sur le site : peut être l'ancienneté de l'entreprise, pas un événement (à vérifier)","Date de l'événement : 12 octobre 2026 (date trouvée dans la page, à vérifier)","À proposer : prestation complète (traiteur + décoration + mobilier)","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.nanterre92.com/"],"rech-794509448":["Activité : IT","Taille : 20-49 salariés, CA ~9 M€","Dirigeant : Gianluca PASQUALI (Président de SAS)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-794949917":["Activité : Formation continue","Taille : 20-49 salariés, CA ~8.9 M€","Mention « 10 ans » sur le site : peut être l'ancienneté de l'entreprise, pas un événement (à vérifier)","Date de l'événement : non trouvée sur le site","À proposer : prestation complète (traiteur + décoration + mobilier)","Ligne : mobile, probablement directe","Source : https://www.lewagon.com/fr/press"],"rech-798052908":["Activité : Club sportif","Taille : 20-49 salariés","Événement récent détecté sur le site : soiree (à confirmer à l'appel)","Date de l'événement : 21 juin 2026 (date trouvée dans la page, à vérifier)","À proposer : prestation complète (traiteur + décoration + mobilier)","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://paris92.fr/actualites/"],"rech-799090097":["Activité : Club sportif","Taille : 50-99 salariés, CA ~7.3 M€","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.mouratoglou.com/"],"rech-800965634":["Activité : Recrutement","Taille : 20-49 salariés, CA ~50.8 M€","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-801531583":["Activité : Organisation d'événements, salons, congrès","Taille : 20-49 salariés, CA ~5.9 M€","Dirigeant : Laurent BANDET (Président de SAS)","Organise des événements régulièrement (activité du secteur ou page agenda)","Date de l'événement : non trouvée sur le site","À proposer : partenariat prescripteur : location de mobilier et traiteur pour leurs clients","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-802377283":["Activité : Promotion immobilière","Taille : 10-19 salariés","Dirigeant : Philippe MARKOWITZ (Président de SAS)","Mention « 10 ans » sur le site : peut être l'ancienneté de l'entreprise, pas un événement (à vérifier)","Date de l'événement : 30-01-2025 (date trouvée dans la page, à vérifier)","À proposer : prestation complète (traiteur + décoration + mobilier)","Ligne : standard de l'entreprise, demande la personne par son nom","Source : http://www.aigopromotion.com/"],"rech-803812593":["Activité : Gestion de fonds","Taille : 100-199 salariés","Dirigeant : Jerome DELMAS (Directeur Général)","Événement récent détecté sur le site : lancement (à confirmer à l'appel)","Date de l'événement : non trouvée sur le site","À proposer : prestation complète (traiteur + décoration + mobilier)","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.swen-cp.fr/"],"rech-804448587":["Activité : Ingénierie","Taille : 50-99 salariés, CA ~9.4 M€","Dirigeant : Radija EL AMRAOUI (BAJAJA) (Président de SAS)","Événement récent détecté sur le site : portes ouvertes (à confirmer à l'appel)","Date de l'événement : 23 mai 2024 (date trouvée dans la page, à vérifier)","À proposer : traiteur + location de mobilier (chaises, tables)","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://quardina.fr/actualites-medias/"],"rech-804489342":["Activité : Concession auto","Taille : 50-99 salariés, CA ~67.1 M€","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.teamcolin.fr/"],"rech-805290426":["Activité : Organisation d'événements, salons, congrès","Taille : 10-19 salariés, CA ~2.6 M€","Événement récent détecté sur le site : lancement (à confirmer à l'appel)","Date de l'événement : non trouvée sur le site","À proposer : partenariat prescripteur : location de mobilier et traiteur pour leurs clients","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.optimiz-group-evenementiel.fr/contact/"],"rech-808781751":["Activité : IT","Taille : 10-19 salariés, CA ~3.1 M€","Dirigeant : Stephane HUET (Président de SAS)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-812715605":["Activité : Courtage","Taille : 50-99 salariés","Dirigeant : Vincent-Gael BAUDET (Autre)","Événement récent détecté sur le site : inauguration (à confirmer à l'appel)","Date de l'événement : non trouvée sur le site","À proposer : prestation complète (traiteur + décoration + mobilier)","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://baltgroup.com/newsroom/"],"rech-813147170":["Activité : Industrie pharmaceutique","Taille : 20-49 salariés, CA ~36.3 M€","Dirigeant : Marion CHOROT (RIQUIER) (Directeur général délégué)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://exeltis-sante.fr/mentions-legales/"],"rech-821075413":["Activité : Recrutement","Taille : 20-49 salariés, CA ~37.9 M€","Dirigeant : Etienne BONHOMME (Autre)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.comet.co/"],"rech-823647110":["Activité : Conseil aux entreprises","Taille : 50-99 salariés, CA ~8.4 M€","Dirigeant : Laetitia DAUFENBACH (LAMBERT) (Président de SAS)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-827498312":["Activité : Organisation d'événements, salons, congrès","Taille : 6-9 salariés","Dirigeant : Olivier JOIRE (Président de SAS)","Organise des événements régulièrement (activité du secteur ou page agenda)","Date de l'événement : non trouvée sur le site","À proposer : partenariat prescripteur : location de mobilier et traiteur pour leurs clients","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://weevent.fr/"],"rech-829201508":["Activité : Technique et production de spectacles","Taille : 3-5 salariés","Dirigeant : Henri IBRAHIM (Président de SAS)","Organise des événements régulièrement (activité du secteur ou page agenda)","Date de l'événement : non trouvée sur le site","À proposer : partenariat prescripteur : location de mobilier et traiteur pour leurs clients","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://nrix.fr/a-propos/"],"rech-830908661":["Activité : Concession auto","Taille : 20-49 salariés, CA ~7.5 M€","Dirigeant : Gilles DESPLAS (Président de SAS)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://ora-e-cars.com/recrutement/"],"rech-833510423":["Activité : Technique et production de spectacles","Taille : 6-9 salariés","Organise des événements régulièrement (activité du secteur ou page agenda)","Date de l'événement : non trouvée sur le site","À proposer : partenariat prescripteur : location de mobilier et traiteur pour leurs clients","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.matchconcept.fr/"],"rech-834500241":["Activité : Agence immobilière","Taille : 20-49 salariés, CA ~26.5 M€","Dirigeant : Bernard CHANTEUX (Président de SAS)","Mention « 30 ans » sur le site : peut être l'ancienneté de l'entreprise, pas un événement (à vérifier)","Date de l'événement : non trouvée sur le site","À proposer : prestation complète (traiteur + décoration + mobilier)","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://partenaires.valorissimo.com/blog/investir-des-75-000-ht-avec-des-rentas-de-5-a-7-le-potentiel-des-residences-etudiantes-en-lmnp-non-gere"],"rech-834685232":["Activité : Avocats et notaires","Taille : 10-19 salariés, CA ~1.7 M€","Dirigeant : Paul BOURNIQUE (Gérant)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : mobile, probablement directe"],"rech-835200411":["Activité : Avocats et notaires","Taille : 100-199 salariés","Dirigeant : Olivier ANDRE (Président de SAS)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.idfacto.fr/emplois-stages-droit/page-emploi.php"],"rech-842703985":["Activité : Avocats et notaires","Taille : 10-19 salariés, CA ~7.2 M€","Dirigeant : Sacha BOKSENBAUM (Président de SAS)","Organise des événements régulièrement (activité du secteur ou page agenda)","Date de l'événement : non trouvée sur le site","À proposer : traiteur + location de mobilier","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-845248905":["Activité : Organisation d'événements, salons, congrès","Taille : 20-49 salariés, CA ~17.1 M€","Organise des événements régulièrement (activité du secteur ou page agenda)","Date de l'événement : non trouvée sur le site","À proposer : partenariat prescripteur : location de mobilier et traiteur pour leurs clients","Ligne : mobile, probablement directe"],"rech-848146742":["Activité : Production audiovisuelle","Taille : 20-49 salariés, CA ~8.8 M€","Dirigeant : Pierre-Etienne FONTENY (Directeur Général)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel"],"rech-848365094":["Activité : Conseil aux entreprises","Taille : 10-19 salariés, CA ~10.9 M€","Dirigeant : Andre RAOUL (Directeur Général)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : mobile, probablement directe"],"rech-852362631":["Activité : Formation continue","Taille : 6-9 salariés","Dirigeant : Patrick SERVAT (Président de SAS)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.formalean.fr/nous-rejoindre"],"rech-878727205":["Activité : Agence immobilière","Taille : 10-19 salariés","Dirigeant : Alain DAVOUST (Président de SAS)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.allowa.com/a-propos"],"rech-891835126":["Activité : Conseil en gestion de patrimoine","Taille : 20-49 salariés, CA ~15.2 M€","Dirigeant : Antoine DELON (Président de SAS)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.irbis-finance.com/nous-rejoindre/"],"rech-893712745":["Activité : IT","Taille : 20-49 salariés, CA ~5.9 M€","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-897891370":["Activité : Industrie pharmaceutique","Taille : 20-49 salariés, CA ~13.2 M€","Dirigeant : Yves CHANE-YENE (Directeur Général)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-903316958":["Activité : Logistique","Taille : 50-99 salariés, CA ~12.1 M€","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : mobile, probablement directe"],"rech-908172851":["Activité : Conseil en gestion de patrimoine","Taille : 10-19 salariés, CA ~5 M€","Dirigeant : Taro UGEN (Président de SAS)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-909892150":["Activité : Avocats et notaires","Taille : 10-19 salariés, CA ~1.9 M€","Dirigeant : Eric LEBRUN (Gérant)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-912855723":["Activité : Avocats et notaires","Taille : 10-19 salariés, CA ~15.7 M€","Dirigeant : Sabine AGE (Président de SAS)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-947899571":["Activité : Organisation d'événements, salons, congrès","Taille : 6-9 salariés","Dirigeant : Gualter FERNANDES (Président de SAS)","Organise des événements régulièrement (activité du secteur ou page agenda)","Date de l'événement : non trouvée sur le site","À proposer : partenariat prescripteur : location de mobilier et traiteur pour leurs clients","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-954506283":["Activité : Concession auto","Taille : 50-99 salariés, CA ~66.1 M€","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://www.charles-pozzi.fr/rejoignez-nous/"],"rech-955200241":["Activité : Promotion immobilière","Taille : 20-49 salariés, CA ~14.2 M€","Dirigeant : Marc BRABANT (Administrateur)","Aucun événement repéré sur le site","Date de l'événement : non trouvée sur le site","À proposer : à qualifier à l'appel","Ligne : standard de l'entreprise, demande la personne par son nom"],"rech-978134542":["Activité : Conseil en communication","Taille : 20-49 salariés","Organise des événements régulièrement (activité du secteur ou page agenda)","Date de l'événement : non trouvée sur le site","À proposer : traiteur + location de mobilier","Ligne : standard de l'entreprise, demande la personne par son nom","Source : https://shariti.com/nous-rejoindre/"]};
+function briefOf(p){return Array.isArray(p.brief)&&p.brief.length?p.brief:(BRIEFS[p.id]||null)}
+function briefHTML(p){const b=briefOf(p);if(!b)return '';return `<ul class="brief">${b.map(x=>{const m=String(x).match(/^Source : (https?:\/\/\S+)$/);return m?`<li>Source : <a href="${esc(m[1])}" target="_blank" rel="noopener">${esc(m[1].replace(/^https?:\/\/(www\.)?/,'').slice(0,60))}</a></li>`:`<li>${esc(x)}</li>`}).join('')}</ul>`}
+function userNotes(p){return String(p.notes||'').split('\n').filter(l=>/^20\d\d-\d\d-\d\d/.test(l)).join('\n')}
+function leadDay(p){return p.discovered||String(p.created||'').slice(0,10)}
+function dayOk(p){return !S.day||leadDay(p)===S.day}
+function dayBar(){const m={};S.prospects.forEach(p=>{const d=leadDay(p);if(d)m[d]=(m[d]||0)+1});const ds=Object.keys(m).sort().reverse();if(ds.length<2)return '';
+  return `<div class="daybar"><label for="dayf">Leads arrivés le</label><select id="dayf" data-day="1"><option value="">Toutes les dates</option>${ds.map(d=>`<option value="${d}"${S.day===d?' selected':''}>${fdateFull(d)} (${m[d]} fiches)</option>`).join('')}</select><span class="muted sm">Date où le lead a été trouvé. Le classement dans une même journée suit la note de pertinence.</span></div>`}
+/* ---------- file d'action du jour ---------- */
+function queue(){
+  const t=today(),out=[];
+  S.prospects.forEach(p=>{
+    if(['signe','perdu','stop'].includes(p.stage)||p.optout||!dayOk(p))return;
+    const due=p.nextDate&&p.nextDate<=t;let b=null,label='';
+    if(p.stage==='repondu'){b=0;label='Réponse à traiter'}
+    else if(p.stage==='qualifie'){b=1;label='Sales Ready'}
+    else if(p.stage==='devis'&&due){b=2;label='Relance devis'}
+    else if(p.stage==='contacte'&&due){b=3;label='Relance'}
+    else if(p.stage==='a_contacter'){b=4;label='À contacter'}
+    if(b!==null)out.push({p,b,label,k:b===0?new Date(p.repliedAt||0).getTime():-pot(p)});
+  });
+  return out.sort((a,b)=>a.b-b.b||a.k-b.k||String(a.p.name).localeCompare(String(b.p.name)));
+}
+function queueItem(it){
+  const p=it.p,late=p.stage==='repondu'&&hoursAgo(p.repliedAt)>2;
+  const cls=it.b===0?(late?'bad':'hot'):it.b===1?'brass':it.b<=3?'warn':'';
+  return `<li class="q" data-act="open" data-id="${esc(p.id)}"><div class="t">${chip(it.label+(it.b===0&&p.repliedAt?' · '+ago(p.repliedAt):''),cls)}<b>${esc(p.name)}</b><span class="muted sm">${esc(SEG_L[p.segment]||'')}${p.city?' · '+esc(p.city):''}</span></div>
+  <div class="btns"><button class="btn sm" data-act="msg" data-id="${esc(p.id)}">Message</button></div>
+  <div class="nx">${p.nextAction?esc(p.nextAction)+(p.nextDate?' — '+fdate(p.nextDate):''):'<span class="sm">Aucune action planifiée : ouvre la fiche.</span>'}</div></li>`;
+}
+
+/* ---------- vues ---------- */
+/* ---------- appels à froid ---------- */
+const CALL_SCRIPT={
+  lieu:[['Ouverture',"Bonjour, Kissima de GBI Events. Je vous appelle 30 secondes : vous accueillez des mariages et des événements, c'est bien ça ?"],['Accroche',"GBI Events fait de l'événementiel clé en main en Île-de-France : traiteur (cocktails, buffets, mignardises, avec la cuisine africaine en spécialité), décoration et matériel. Vos clients n'ont qu'un seul interlocuteur. Je voudrais faire partie des prestataires que vous recommandez."],['Questions',"Votre traiteur est-il libre ou imposé ? Combien d'événements par mois ? Vos clients cherchent-ils parfois une solution clé en main ? Qui choisit les prestataires ?"],['Objectif',"Obtenir un email pour envoyer le dossier et un 2e échange, ou un accord de recommandation. Commission à définir avec Germaine."]],
+  planner:[['Ouverture',"Bonjour, Kissima de GBI Events. Vous organisez des mariages et des événements, c'est bien ça ?"],['Accroche',"Nous faisons du clé en main : traiteur, décoration et matériel, donc un seul prestataire à coordonner au lieu de trois. Pour les mariages, nous avons des packs complets."],['Questions',"Combien de mariages et d'événements d'ici fin 2026 et en 2027 ? Combien de prestataires coordonnez-vous par événement ? Des clients vous demandent-ils une cuisine africaine ?"],['Objectif',"Obtenir un email et un échange de 10 minutes pour présenter la collaboration."]],
+  agence:[['Ouverture',"Bonjour, Kissima de GBI Events. Vous organisez des événements pour des entreprises, c'est bien ça ?"],['Accroche',"Nous gérons en clé en main le traiteur (cocktails, buffets, mignardises), la décoration et le matériel, avec un chiffrage sous 48 h."],['Questions',"Des réceptions ou soirées sont-elles prévues ? Combien de convives ? Qui valide les prestataires ?"],['Objectif',"Un email du bon contact et une date pour un chiffrage."]],
+  traiteur:[['Ouverture',"Bonjour, Kissima de GBI Events. Je cherche des partenaires pour les événements trop gros ou hors de votre offre."],['Accroche',"Nous faisons décoration, matériel et cuisine africaine : nous pouvons compléter vos prestations."],['Questions',"Vous faites de la décoration ou du matériel ? Vous sous-traitez parfois ?"],['Objectif',"Un partenariat de sous-traitance réciproque."]],
+  entreprise:[['Ouverture',"Bonjour, Kissima de GBI Events. Pourriez-vous me passer la personne qui organise vos réceptions ou vos événements (dirigeant, RH, assistante de direction) ?"],['Accroche',"Nous organisons vos réceptions clé en main : cocktail, buffet, mignardises, décoration et matériel, avec un seul interlocuteur. Chiffrage sous 48 h."],['Questions',"Un événement est-il prévu : repas de fin d'année, séminaire, inauguration, cocktail client ? Quelle date ? Combien de personnes ? Qui décide ? Budget global ?"],['Objectif',"Date + nombre de convives + email pour un devis sous 48 h. Événement visé : 1 500 € minimum."]],
+  particulier:[['Ouverture',"Bonjour, Kissima de GBI Events, suite à votre demande."],['Accroche',"Je vous pose quelques questions pour vous chiffrer juste."],['Questions',"Date et lieu ? Nombre d'invités ? Type d'événement (un mariage ouvre droit à nos packs) ? Prestations voulues : traiteur, décoration, matériel ? Budget global ?"],['Objectif',"Devis sous 48 h. Événement de 1 500 € minimum ; en dessous, proposer le clé en main ou décliner poliment."]]
+};
+const LOST_REASONS=['Déjà un traiteur','Pas de besoin','Trop cher','Budget sous le minimum','Pas décisionnaire','Autre'];
+function workday(n){let d=new Date();let k=0;while(k<n){d.setDate(d.getDate()+1);const w=d.getDay();if(w!==0&&w!==6)k++}return toISO(d)}
+function hasPhone(p){return String(p.phone||'').replace(/\D/g,'').length>=9}
+function fmtPhone(s){const d=String(s||'').replace(/\D/g,'');return d.length===10?d.replace(/(\d\d)(?=\d)/g,'$1 '):String(s||'')}
+function noPhoneList(){return S.prospects.filter(p=>!hasPhone(p)&&!['signe','perdu','stop'].includes(p.stage)&&!p.optout)}
+function dirigeantOf(p){const m=String(p.notes||'').match(/Dirigeant : ([^;\n]+)/);return m?m[1].trim():''}
+function lineType(p){const d=String(p.phone||'').replace(/\D/g,'');return /^0[67]/.test(d)?'Mobile : ligne probablement directe':'Ligne de l\'entreprise : probablement un standard, demande la personne par son nom'}
+function nophoneHTML(){
+  const L=noPhoneList().sort((a,b)=>(a.segment==='lieu')-(b.segment==='lieu')||String(a.name).localeCompare(String(b.name)));
+  if(!L.length)return `<div class="card"><b>Aucune entreprise sans téléphone.</b></div>`;
+  return `<section class="card"><h3>Sans téléphone (${L.length})</h3><div class="muted sm">Ces fiches ne sont pas dans la file d'appels. Cherche le numéro (bouton Chercher), saisis-le, Enregistrer : la fiche passe dans Appels.</div>${L.map(p=>`<div class="nophone"><span><b>${esc(p.name)}</b> <span class="muted">${esc(p.city||p.dept||'')} · ${esc(SEG_L[p.segment]||'')}${p.email?' · email : '+esc(p.email):''}</span></span><input type="tel" id="ph-${esc(p.id)}" placeholder="Téléphone" aria-label="Téléphone de ${esc(p.name)}"><a class="btn sm" target="_blank" rel="noopener" href="https://www.google.com/search?q=${encodeURIComponent((p.name||'')+' '+(p.city||'')+' téléphone')}">Chercher</a><button class="btn sm" data-act="phonesave" data-id="${esc(p.id)}" data-write>Enregistrer</button></div>`).join('')}</section>`;
+}
+function callQueue(){
+  const t=today(),sk=S.call.skip;
+  return S.prospects.filter(p=>!['signe','perdu','stop','repondu','qualifie','devis'].includes(p.stage)&&!p.optout&&hasPhone(p)&&dayOk(p)&&!sk.includes(p.id)&&(p.stage==='a_contacter'||(p.stage==='contacte'&&p.nextDate&&p.nextDate<=t)))
+    .sort((a,b)=>{const ag=x=>x.segment==='agence'?1:0,da=a.stage==='contacte'?0:1,db=b.stage==='contacte'?0:1;const pr=x=>({A:0,B:1,C:2})[x.priority]??3;
+    const sg=x=>/prévu/.test(x.eventType||'')?0:/récent/.test(x.eventType||'')?1:/régulier/.test(x.eventType||'')?2:3;
+    const sz=x=>/^(10-19|20-49)$/.test(x.tranche||'')?0:x.tranche==='50-99'?1:2;
+    const px=x=>x.dept==='78'?0:(x.dept==='95'||x.dept==='92')?1:2;
+    return ag(a)-ag(b)||da-db||sg(a)-sg(b)||sz(a)-sz(b)||px(a)-px(b)||pr(a)-pr(b)||(+b.leadScore||0)-(+a.leadScore||0)||pot(b)-pot(a)||String(a.name).localeCompare(String(b.name))});
+}
+function callStats(){
+  const t=today();let n=0,joint=0,int=0,rap=0;
+  S.prospects.forEach(p=>(p.log||[]).forEach(l=>{if(!l.x||!l.x.startsWith('Appel : '))return;if(toISO(new Date(l.t))!==t)return;n++;const x=l.x.slice(8);if(/^(Pas de réponse|Répondeur|Mauvais numéro)/.test(x))return;joint++;if(x.startsWith('Intéressé'))int++;if(x.startsWith('À rappeler'))rap++}));
+  return {n,joint,int,rap};
+}
+function callsHTML(){
+  const Q=callQueue(),st=callStats();
+  let cur=S.call.pid?byId(S.call.pid):null;
+  if(!cur||!Q.some(x=>x.id===cur.id))cur=Q[0]||null;
+  S.call.pid=cur?cur.id:'';
+  const nop=S.prospects.filter(p=>!hasPhone(p)&&!['signe','perdu','stop'].includes(p.stage)&&!p.optout&&p.stage==='a_contacter');
+  const stats=`<div class="callstats"><div><b>${st.n}</b><span>appels aujourd'hui</span></div><div><b>${st.joint}</b><span>joints</span></div><div><b>${st.int}</b><span>intéressés</span></div><div><b>${Q.length}</b><span>à appeler</span></div></div>`;
+  let card='';
+  if(cur){
+    const sc=CALL_SCRIPT[cur.segment]||CALL_SCRIPT.lieu;
+    card=`<div class="callcard"><div class="muted sm">${chip(cur.stage==='contacte'?'Rappel':'Premier appel',cur.stage==='contacte'?'warn':'hot')} ${esc(SEG_L[cur.segment]||'')}${cur.city?' · '+esc(cur.city):''}${cur.dept?' ('+esc(cur.dept)+')':''}${cur.touches?' · '+cur.touches+' tentative(s)':''}</div>
+    <h2>${esc(cur.name)}</h2>
+    ${(cur.priority||cur.eventType)?`<div style="margin:4px 0">${cur.priority?chip('Priorité '+cur.priority+(cur.leadScore?' · '+cur.leadScore+'/100':''),cur.priority==='A'?'hot':cur.priority==='B'?'warn':''):''} ${cur.eventType?chip('Événements : '+cur.eventType,'brass'):''}</div>`:''}
+    ${briefHTML(cur)}
+    ${cur.need?`<div class="script"><b>Besoin probable (à confirmer à l'appel)</b>${esc(cur.need)}${cur.askQ?`<b>À demander</b>${esc(cur.askQ)}`:''}</div>`:''}
+    ${dirigeantOf(cur)?`<div class="script"><b>Demande à parler à</b>${esc(dirigeantOf(cur))}<b>Ligne</b>${esc(lineType(cur))}</div>`:''}
+    <a class="callnum" href="tel:${esc(String(cur.phone).replace(/[^+\d]/g,''))}">${esc(fmtPhone(cur.phone))}</a>
+    ${(briefOf(cur)?userNotes(cur):cur.notes)?`<div class="muted sm" style="white-space:pre-wrap">${esc(briefOf(cur)?userNotes(cur):cur.notes)}</div>`:''}
+    <div class="script">${sc.map(([k,v])=>`<b>${k}</b>${esc(v)}`).join('')}</div>
+    <label class="sm muted" for="callnote">Note de l'appel (email obtenu, interlocuteur, traiteur libre ou imposé, date de l'événement…)</label>
+    <textarea id="callnote" rows="6" style="width:100%" placeholder="Ce que tu as appris">${esc(S.call.note||'')}</textarea>
+    <div class="res">
+      <button class="btn primary" data-act="callres" data-r="int" data-write>Intéressé</button>
+      <button class="btn" data-act="callres" data-r="rap" data-write>À rappeler</button>
+      <button class="btn" data-act="callres" data-r="nr" data-write>Pas de réponse</button>
+      <button class="btn" data-act="callres" data-r="rep" data-write>Répondeur</button>
+      <button class="btn" data-act="callres" data-r="no" data-write>Pas intéressé</button>
+      <button class="btn" data-act="callres" data-r="bad" data-write>Mauvais numéro</button>
+      <button class="btn danger" data-act="callres" data-r="stop" data-write>Ne plus appeler</button>
+      <button class="btn" data-act="callskip">Passer</button>
+    </div>
+    <div class="sm muted" style="margin-top:8px">Rappel le : <input type="date" id="calldate" value="${workday(3)}"> · Si pas intéressé, motif : <select id="calllost">${LOST_REASONS.map(r=>`<option${S.call.lost===r?' selected':''}>${r}</option>`).join('')}</select></div>
+    <div style="margin-top:8px"><button class="btn sm" data-act="open" data-id="${esc(cur.id)}">Ouvrir la fiche</button></div></div>`;
+  }else card=`<div class="card"><b>Plus personne à appeler pour l'instant.</b><div class="muted sm">Importe un CSV de prospects avec téléphone (onglet Prospects) ou ajoute les numéros manquants ci-dessous.</div></div>`;
+  const nl='';
+  return dayBar()+stats+card+nl+interestHTML();
+}
+function interestHTML(){
+  const NOJOIN=/^(Pas de réponse|Répondeur|Mauvais numéro)/;
+  const rows=[];
+  S.prospects.forEach(p=>{
+    if(!p.naf&&!p.tranche)return;
+    let joined=false,interested=false;
+    (p.log||[]).forEach(l=>{if(!l.x||!l.x.startsWith('Appel : '))return;const x=l.x.slice(8);if(NOJOIN.test(x))return;joined=true;if(x.startsWith('Intéressé'))interested=true});
+    rows.push({p,joined,interested,called:(p.touches||0)>0});
+  });
+  if(!rows.length)return '';
+  const groups={
+    'Priorité':r=>'Priorité '+(r.p.priority||'?'),
+    'Signal événement':r=>r.p.eventType?'Événement signalé':'Aucun signal',
+    'Taille':r=>r.p.tranche?r.p.tranche+' salariés':'?',
+    'Secteur (NAF)':r=>r.p.naf||'?'
+  };
+  const out=Object.entries(groups).map(([title,fn])=>{
+    const m={};rows.forEach(r=>{const k=fn(r);(m[k]=m[k]||{n:0,c:0,j:0,i:0});m[k].n++;if(r.called)m[k].c++;if(r.joined)m[k].j++;if(r.interested)m[k].i++});
+    const body=Object.entries(m).sort((a,b)=>b[1].j-a[1].j||b[1].n-a[1].n).slice(0,12).map(([k,v])=>{
+      const rate=v.j?Math.round(100*v.i/v.j)+' %':'—';
+      const warn=v.j<10?' <span class="muted">(trop peu : '+v.j+' joints, à lire avec prudence)</span>':'';
+      return `<tr><td>${esc(k)}</td><td>${v.n}</td><td>${v.c}</td><td>${v.j}</td><td>${v.i}</td><td><b>${rate}</b>${warn}</td></tr>`}).join('');
+    return `<h4 style="margin:12px 0 4px">${title}</h4><div class="scroll-x"><table class="t"><thead><tr><th></th><th>Fiches</th><th>Appelées</th><th>Joints</th><th>Intéressés</th><th>Taux d'intérêt</th></tr></thead><tbody>${body}</tbody></table></div>`}).join('');
+  return `<section class="card" style="margin-top:14px"><h3>Taux d'intérêt par segment</h3><div class="muted sm">Taux = intéressés ÷ joints (sans compter répondeur, pas de réponse, mauvais numéro). En dessous de 10 joints par ligne, le chiffre ne veut encore rien dire : on compare à partir de 30 à 50 joints au total.</div>${out}</section>`;
+}
+async function callResult(r){
+  const p=byId(S.call.pid);if(!p)return;
+  const note=($('#callnote')||{}).value||'';const label={int:'Intéressé',rap:'À rappeler',nr:'Pas de réponse',rep:'Répondeur',no:'Pas intéressé',bad:'Mauvais numéro',stop:'Ne plus appeler'}[r];
+  const base={touches:(p.touches||0)+1,lastCall:new Date().toISOString(),lastCallResult:label,log:logAdd(p,'Appel : '+label+(note?' — '+note:'')),notes:note?((p.notes?p.notes+'\n':'')+today()+' : '+note):p.notes};
+  let ok=false;
+  if(r==='nr'||r==='rep'||r==='rap'){
+    const d=r==='rap'?($('#calldate')||{}).value||workday(3):workday(r==='nr'?1:2);
+    ok=await setStage(p,'contacte',{...base,nextDate:d,nextAction:r==='rap'?'Rappeler (demandé)':'Rappeler'});
+  }else if(r==='int'){
+    ok=await setStage(p,'repondu',{...base,explicit:true,intent:Math.max(2,+p.intent||0),signal:note||'Intéressé au téléphone',nextAction:'Envoyer la proposition ou fixer un rendez-vous',nextDate:today()});
+  }else if(r==='no'){
+    ok=await setStage(p,'perdu',{...base,lostReason:($('#calllost')||{}).value||'Autre',nextAction:'',nextDate:''});
+  }else if(r==='bad'){
+    ok=await guard(()=>save(p.id,{...base,phone:'',notes:(p.notes?p.notes+'\n':'')+today()+' : mauvais numéro'}));
+  }else if(r==='stop'){
+    ok=await setStage(p,'stop',base);
+  }
+  if(ok){S.call.pid='';S.call.note='';toast(label+' enregistré.');render()}
+}
+const VIEWS={
+calls(){return callsHTML()},
+nophone(){return nophoneHTML()},
+today(){
+  const Q=queue(),shown=S.showAll?Q:Q.slice(0,14);
+  const ev=S.prospects.filter(p=>p.stage==='signe'&&p.eventDate&&p.eventDate>=today()).sort((a,b)=>a.eventDate.localeCompare(b.eventDate));
+  const head=kpiHTML();
+  if(S.loaded&&!S.prospects.length)return head+`<div class="empty"><b>Aucun prospect pour l'instant</b>Importe une liste (onglet Prospects) ou ajoute une première fiche. Les demandes entrantes arrivent directement au statut « Répondu ».</div>`;
+  return head+dayBar()+`<div class="grid2"><section class="card"><h2>À faire maintenant <span class="muted sm">(${Q.length})</span></h2>
+   <p class="note">Ordre : réponses à traiter, Sales Ready, relances, puis nouveaux prospects classés par potentiel.</p>
+   ${Q.length?`<ul class="q-list">${shown.map(queueItem).join('')}</ul>`:`<div class="empty">Rien d'urgent.</div>`}
+   ${Q.length>14?`<p><button class="btn sm" data-act="showall">${S.showAll?'Réduire':'Afficher les '+Q.length}</button></p>`:''}</section>
+   <aside><section class="card"><h3>Entonnoir</h3>${funnelHTML(S.prospects)}</section>
+   <section class="card"><h3>Matériel</h3>${(()=>{const t=today(),o=S.reservations.filter(x=>['option','confirmee'].includes(x.status)&&x.start&&x.start<=addDays(t,7)).length,b=S.reservations.filter(x=>x.status==='sortie').length,l=S.reservations.filter(resLate).length,d=S.reservations.filter(x=>x.status==='demande').length;return `<p class="note">${o} sortie(s) sous 7 jours · ${b} chez des clients${l?' · <b style="color:var(--bad)">'+l+' en retard</b>':''}${d?' · '+d+' demande(s) à traiter':''}</p><p><button class="btn sm" data-act="tab" data-v="materiel">Ouvrir Matériel</button></p>`})()}</section>
+   <section class="card"><h3>Événements signés à venir</h3>${ev.length?ev.map(p=>`<div class="ev"><span><b>${fdateFull(p.eventDate)}</b> · ${esc(p.name)}</span><span class="muted">${p.guests?esc(p.guests)+' inv.':''}</span></div>`).join(''):'<p class="note">Aucun événement signé.</p>'}
+   <p class="note">Capacité connue : 1 événement par week-end. Semaine : à confirmer.</p></section></aside></div>`;
+},
+pipeline(){
+  const cols=PIPE.map(st=>{
+    const L=S.prospects.filter(p=>p.stage===st).sort((a,b)=>(+b.intent||0)-(+a.intent||0)||pot(b)-pot(a)||String(a.name).localeCompare(String(b.name)));
+    const val=st==='devis'?sum(L,p=>p.quoteAmount):st==='signe'?sum(L,p=>p.signedAmount):0;
+    return `<div class="col"><h3><span>${STAGE_L[st]}</span><small>${L.length}${val?' · '+fmt(val):''}</small></h3>
+     ${L.slice(0,40).map(p=>`<div class="pc" data-act="open" data-id="${esc(p.id)}"><b>${esc(p.name)}</b><span class="muted sm">${esc(SEG_L[p.segment]||'')}${p.city?' · '+esc(p.city):''}</span>
+      <span>${p.intent?chip('Intention '+INTENT[p.intent].toLowerCase(),p.intent>=2?'hot':''):''} ${p.quoteAmount&&st==='devis'?chip(fmt(p.quoteAmount),'brass'):''} ${p.signedAmount&&st==='signe'?chip(fmt(p.signedAmount),'good'):''}</span>
+      ${p.nextDate?`<span class="sm muted">${p.nextDate<=today()&&st!=='signe'?'⚑ ':''}${fdate(p.nextDate)} · ${esc(p.nextAction||'')}</span>`:''}</div>`).join('')}
+     ${L.length>40?`<p class="note">+ ${L.length-40} autres (onglet Prospects)</p>`:''}${!L.length?'<p class="note" style="padding:4px">—</p>':''}</div>`}).join('');
+  const out=S.prospects.filter(p=>p.stage==='perdu').length,stop=S.prospects.filter(p=>p.stage==='stop').length;
+  return `<div class="kanban">${cols}</div><p class="note">Perdus : ${out} · Oppositions : ${stop}. Passer en « Sales Ready » exige une intention moyenne ou forte, un signal observé et une prochaine étape.</p>`;
+},
+prospects(){
+  return dayBar()+`<div class="bar-tools">
+    <input type="search" id="fq" data-filter="q" placeholder="Rechercher (nom, ville, email)" value="${esc(S.f.q)}" aria-label="Rechercher">
+    <select data-filter="seg" aria-label="Segment"><option value="">Tous segments</option>${SEGMENTS.map(([k,l])=>`<option value="${k}"${S.f.seg===k?' selected':''}>${l}</option>`).join('')}</select>
+    <select data-filter="chan" aria-label="Canal"><option value="">Tous canaux</option>${CHANNELS.map(([k,l])=>`<option value="${k}"${S.f.chan===k?' selected':''}>${l}</option>`).join('')}</select>
+    <select data-filter="stage" aria-label="Étape"><option value="actifs"${S.f.stage==='actifs'?' selected':''}>En cours</option><option value="">Toutes étapes</option>${STAGES.map(([k,l])=>`<option value="${k}"${S.f.stage===k?' selected':''}>${l}</option>`).join('')}</select>
+    <button class="btn primary" data-act="newp" data-write>+ Prospect</button>
+    <button class="btn" data-act="importtoggle" data-write>Importer CSV</button>
+    <button class="btn" data-act="export">Exporter CSV</button></div>
+  ${S.showImport?importHTML():''}<div id="plist">${listHTML()}</div>`;
+},
+quote(){return quoteHTML()},
+messages(){return msgHTML()},
+channels(){return channelsHTML()},
+rules(){return rulesHTML()},
+materiel(){return matHTML()}
+};
+
+function filtered(){
+  const f=S.f,q=f.q.trim().toLowerCase();
+  return S.prospects.filter(p=>{
+    if(f.seg&&p.segment!==f.seg)return false;if(f.chan&&p.channel!==f.chan)return false;
+    if(f.stage==='actifs'){if(['perdu','stop'].includes(p.stage))return false}else if(f.stage&&p.stage!==f.stage)return false;
+    if(!dayOk(p))return false;
+    if(q&&!((p.name||'')+' '+(p.city||'')+' '+(p.email||'')+' '+(p.website||'')).toLowerCase().includes(q))return false;
+    return true}).sort((a,b)=>pot(b)-pot(a)||String(a.name).localeCompare(String(b.name)));
+}
+function listHTML(){
+  const L=filtered();
+  if(!L.length)return `<div class="empty"><b>${S.prospects.length?'Aucun résultat':'Aucun prospect'}</b>${S.prospects.length?'Modifie les filtres.':'Importe un CSV ou ajoute une fiche.'}</div>`;
+  return `<p class="note">${L.length} fiche${L.length>1?'s':''}${L.length>200?' (200 affichées, affine la recherche)':''}</p><div class="rows">${L.slice(0,200).map(p=>`<div class="row" data-act="open" data-id="${esc(p.id)}">
+   <div><b>${esc(p.name)}</b><div class="muted sm">${esc(SEG_L[p.segment]||'')}${p.city?' · '+esc(p.city):''}</div></div>
+   <div class="m">${chip(STAGE_L[p.stage]||p.stage,p.stage==='signe'?'good':p.stage==='qualifie'?'brass':p.stage==='repondu'?'hot':p.stage==='stop'||p.stage==='perdu'?'bad':'')}${chip(CH_L[p.channel]||'')}
+     ${chip('email',p.email?'':'off')}${chip('tél.',p.phone?'':'off')}${chip('site',p.website?'':'off')}</div>
+   <div class="sm muted">${pot(p)?'Potentiel '+pot(p)+' · ':''}${esc(p.nextAction||'—')}${p.nextDate?' ('+fdate(p.nextDate)+')':''}</div></div>`).join('')}</div>`;
+}
+
+/* ---------- import / export CSV ---------- */
+function parseCSV(text){
+  text=text.replace(/^﻿/,'');const first=text.split('\n')[0]||'';
+  const sep=(first.match(/;/g)||[]).length>(first.match(/,/g)||[]).length?';':',';
+  const rows=[];let row=[],cur='',q=false;
+  for(let i=0;i<text.length;i++){const c=text[i];
+    if(q){if(c==='"'){if(text[i+1]==='"'){cur+='"';i++}else q=false}else cur+=c}
+    else if(c==='"')q=true;else if(c===sep){row.push(cur);cur=''}
+    else if(c==='\n'||c==='\r'){if(c==='\r'&&text[i+1]==='\n')i++;row.push(cur);cur='';if(row.some(x=>x.trim()))rows.push(row);row=[]}
+    else cur+=c}
+  row.push(cur);if(row.some(x=>x.trim()))rows.push(row);return rows;
+}
+const SYN={name:['nom','name','entreprise','entreprise / nom','société','societe','company','raison sociale','full_name','nom complet'],email:['email','e-mail','email professionnel','mail','courriel'],phone:['téléphone','telephone','phone','tel','tél','mobile','phone_number','numéro'],website:['site','site web','website','url','web'],city:['ville','city'],dept:['département','departement','dept'],osmId:['id prospect','osm id','osm_id','id source'],source:['source','source principale'],proof:['url de la preuve','preuve','proof'],segment:['segment','type de prospect','type'],instagram:['instagram'],notes:['notes','commentaire'],priority:['priorite','priorité'],leadScore:['score_achat','score'],eventType:['type_evenement'],need:['besoin'],offre:['offre_appli'],askQ:['question_appel'],naf:['naf'],tranche:['tranche_effectif'],fiab:['fiabilite']};
+function normUrl(u){return String(u||'').toLowerCase().replace(/^https?:\/\//,'').replace(/^www\./,'').split('#')[0].split('?')[0].replace(/\/+$/,'')}
+function keysOf(p){const k=[];if(p.osmId)k.push('osm:'+String(p.osmId).trim());if(p.email)k.push('m:'+String(p.email).toLowerCase().trim());
+  const d=String(p.phone||'').replace(/\D/g,'');if(d.length>=9)k.push('t:'+d.slice(-9));const u=normUrl(p.website);if(u&&u.includes('/'))k.push('u:'+u);else if(u)k.push('d:'+u+'|'+String(p.name||'').toLowerCase().trim());
+  if(p.name)k.push('n:'+String(p.name).toLowerCase().trim()+'|'+String(p.city||'').toLowerCase().trim());return k}
+function segGuess(v,def){const s=String(v||'').toLowerCase();if(!s)return def;if(/events_venue|conference|salle|domaine|ch[âa]teau|lieu/.test(s))return 'lieu';if(/planner|organis/.test(s))return 'planner';if(/agence/.test(s))return 'agence';if(/traiteur|d[ée]cor/.test(s))return 'traiteur';if(/entreprise|asso/.test(s))return 'entreprise';if(/particulier/.test(s))return 'particulier';return def}
+function importHTML(){return `<section class="card"><h3>Importer un CSV</h3>
+  <p class="note">Les doublons sont ignorés (identifiant source, email, téléphone, adresse web complète, ou nom + ville). Les téléphones restent du texte. Les colonnes sont reconnues par leur titre.</p>
+  <div class="fg w2"><label class="f"><span>Type d'import</span><select id="imptype"><option value="b2b">Prospects B2B (lieux, planners, agences, annuaires)</option><option value="meta">Leads Meta Ads (demandes explicites)</option><option value="reco">Contacts du réseau (un par un, pas de masse)</option></select></label>
+  <label class="f"><span>Fichier CSV</span><input type="file" id="impfile" accept=".csv,text/csv,text/plain"></label></div>
+  <label class="f" style="margin-top:8px"><span>ou colle le contenu ici</span><textarea id="imptext" placeholder="Nom;Ville;Email;Téléphone;Site"></textarea></label>
+  <p style="margin-top:8px"><button class="btn primary" data-act="importrun" data-write>Importer</button> <span id="impres" class="note"></span></p></section>`}
+async function runImport(text){
+  const rows=parseCSV(text);if(rows.length<2){$('#impres').textContent='Aucune ligne exploitable (il faut un en-tête et au moins une ligne).';return}
+  const head=rows[0].map(h=>h.trim().toLowerCase());const idx={};
+  Object.entries(SYN).forEach(([k,L])=>{const i=head.findIndex(h=>L.includes(h));if(i>=0)idx[k]=i});
+  if(idx.name==null){$('#impres').textContent='Colonne du nom introuvable (nom, entreprise, name, full_name…).';return}
+  const type=$('#imptype').value,seen=new Set();S.prospects.forEach(p=>keysOf(p).forEach(k=>seen.add(k)));
+  const defSeg=type==='b2b'?'lieu':'particulier',ch=type==='meta'?'meta':type==='reco'?'reco':'b2b',now=new Date().toISOString();
+  let add=0,dup=0;const docs=[];
+  for(const r of rows.slice(1)){
+    const g=k=>idx[k]!=null?(r[idx[k]]||'').trim():'';const name=g('name');if(!name)continue;
+    const p={name,segment:segGuess(g('segment'),defSeg),channel:ch,offer:(['location','deco','traiteur','pack','partenariat'].includes(g('offre'))?g('offre'):(type==='b2b'?'partenariat':'pack')),priority:g('priority'),leadScore:num(g('leadScore')),eventType:g('eventType'),need:g('need'),askQ:g('askQ'),naf:g('naf'),tranche:g('tranche'),fiab:g('fiab'),city:g('city'),dept:g('dept'),website:g('website'),email:g('email'),phone:g('phone'),instagram:g('instagram'),
+      source:g('source')||(type==='meta'?'Meta Ads (formulaire)':'Import CSV'),proof:g('proof'),osmId:type==='b2b'?g('osmId'):'',notes:g('notes'),discovered:today(),
+      stage:type==='meta'?'repondu':'a_contacter',intent:type==='meta'?1:0,signal:type==='meta'?'Demande via formulaire Meta Ads':'',score:{},explicit:type==='meta',optout:false,touches:0,
+      owner:S.who||'Kissima',nextAction:type==='meta'?'Répondre sous 2 h et qualifier le besoin':type==='reco'?'Message personnel (envoi individuel)':'Trouver le bon contact et envoyer le 1er message',nextDate:today(),
+      log:[{t:now,by:S.who||'—',x:'Importé (CSV)'}],created:now,updated:now};
+    if(type==='meta'){p.repliedAt=now;p.firstContact=now}
+    const ks=keysOf(p);if(ks.some(k=>seen.has(k))){dup++;continue}
+    ks.forEach(k=>seen.add(k));docs.push(p);add++;
+  }
+  if(!docs.length){$('#impres').textContent='0 nouvelle fiche, '+dup+' doublon(s) ignoré(s).';return}
+  $('#impres').textContent='Import en cours…';
+  const ok=await guard(async()=>{const col=S.db.collection('prospects');for(const p of docs){await col.add(p)}});
+  $('#impres').textContent=ok?add+' fiche(s) ajoutée(s), '+dup+' doublon(s) ignoré(s).':'Import interrompu.';
+}
+async function exportCSV(){
+  const cols=[['osmId','ID source'],['name','Nom'],['segment','Segment'],['channel','Canal'],['stage','Étape'],['city','Ville'],['website','Site'],['email','Email'],['phone','Téléphone'],['intent','Intention'],['signal','Signal'],['eventDate','Date événement'],['guests','Invités'],['quoteAmount','Devis €'],['signedAmount','Signé €'],['cashedAmount','Encaissé €'],['nextAction','Prochaine action'],['nextDate','Date'],['source','Source'],['proof','Preuve'],['owner','Responsable']];
+  const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+  const csv='﻿'+cols.map(c=>q(c[1])).join(';')+'\n'+S.prospects.map(p=>cols.map(([k])=>q(k==='segment'?SEG_L[p.segment]:k==='channel'?CH_L[p.channel]:k==='stage'?STAGE_L[p.stage]:p[k])).join(';')).join('\n');
+  if(!S.downloads){toast("Export indisponible dans cette vue.",true);return}
+  try{await S.downloads.save({filename:'gbi-prospects.csv',data:csv})}catch(e){if(!e||e.code!=='declined')toast("Export impossible"+(e&&e.code?' ('+e.code+')':'')+'.',true)}
+}
+
+/* ---------- devis ---------- */
+function effEnd(r){const e=r.end||r.start;return r.status==='sortie'&&e<today()?today():e}
+function avail(k,start,end,exclude){
+  const m=MAT.find(x=>x[0]===k);const st=S.pricing[m[2]];if(st==null||st==='')return null;
+  end=end||start;
+  const used=S.reservations.filter(r=>r.id!==exclude&&BLOCKING.includes(r.status)&&r.start&&r.start<=end&&effEnd(r)>=start).reduce((a,r)=>a+num((r.items||{})[k]),0);
+  return {stock:num(st),used,free:num(st)-used};
+}
+function itemsTxt(it){return MAT.filter(([k])=>num((it||{})[k])>0).map(([k,l])=>num(it[k])+' '+l.toLowerCase()).join(', ')||'—'}
+function calcQuote(q){
+  const pr=S.pricing,g=num(q.guests),L=[],W=[],wed=q.kind==='mariage';let ev=false;
+  const add=(label,qty,unit,total)=>L.push({label,qty,unit,total});
+  if(!q.kind)W.push(['',"Précise le type d'événement : les packs ne s'appliquent qu'aux mariages."]);
+  if(q.formule&&q.formule!=='none'){ev=true;if(!g)W.push(['bad',"Renseigne le nombre d'invités pour le traiteur."]);else add('Buffet '+cap(q.formule),g,pr[q.formule],g*pr[q.formule])}
+  if(q.cocktail){ev=true;if(!(num(pr.cocktail)>0))W.push(['bad','Cocktail / mignardises : tarif pas encore fixé (onglet Règles). Chiffre-le avec Germaine.']);else if(!g)W.push(['bad',"Renseigne le nombre d'invités pour le cocktail."]);else add('Cocktail / mignardises',g,pr.cocktail,g*pr.cocktail)}
+  if(q.vin){ev=true;if(g>=pr.vinMin)add("Vin d'honneur",g,pr.vin,g*pr.vin);else W.push(['bad',"Vin d'honneur : minimum "+pr.vinMin+' invités.'])}
+  if(q.service&&g){ev=true;add('Service à table',g,pr.service,g*pr.service)}
+  if(q.fumee)add('Option fumée',1,pr.fumee,pr.fumee);
+  if(q.plancha&&g)add('Animation plancha',g,pr.plancha,g*pr.plancha);
+  if(q.deco==='custom'){ev=true;const v=num(q.decoCustom);if(v<pr.decoMin)W.push(['',"Décoration sur mesure : à partir de "+fmt(pr.decoMin)+'.']);if(v>0)add('Décoration sur mesure',1,v,v)}
+  else if(q.deco&&q.deco!=='none'){ev=true;if(!wed)W.push(['bad','Les packs sont réservés aux mariages. Hors mariage : décoration sur mesure, à la carte.']);else{const v=pr['deco'+q.deco];add('Pack mariage, décoration '+q.deco+' invités',1,v,v)}}
+  let hasLoc=false;
+  MAT.forEach(([k,l,sk,pk])=>{const n=num(q[k]);if(!(n>0))return;hasLoc=true;add(l,n,pr[pk],n*pr[pk]);
+    if(q.date){const a=avail(k,q.date,q.date,null);
+      if(!a)W.push(['',l+' : stock non renseigné (onglet Matériel), vérifie à la main.']);
+      else if(n>a.free)W.push(['bad',l+' : '+n+' demandé(s), '+Math.max(0,a.free)+' disponible(s) le '+fdateFull(q.date)+' (stock '+a.stock+', déjà réservé '+a.used+').'])}
+    else{const st=pr[sk];if(st!=null&&n>st)W.push(['bad',l+' : '+n+' demandé(s) pour un stock total de '+st+'.'])}});
+  if(hasLoc)W.push(['','Livraison de la location : non chiffrée ici. À définir avec Germaine (retrait possible par le client).']);
+  const total=sum(L,x=>x.total),mp=num(pr.minPanier);
+  if(ev&&mp&&total>0&&total<mp)W.push(['bad','Total '+fmt(total)+' : sous le panier minimum de '+fmt(mp)+'. Ajoute décoration, matériel ou service pour passer en clé en main, ou décline poliment.']);
+  else if(!ev&&hasLoc)W.push(['','Location seule : non soumise au panier minimum événement (règle à confirmer avec Germaine).']);
+  if(q.date){
+    const wk=weekendKey(q.date);
+    if(wk){const sg=conflicts(q.date,q.pid,['signe']),dv=conflicts(q.date,q.pid,['devis']);
+      if(sg.length)W.push(['bad','Week-end déjà réservé par '+sg[0].name+' (1 événement par week-end).']);
+      else if(dv.length)W.push(['','Un devis est déjà en cours pour ce week-end : '+dv[0].name+'.']);
+      else W.push(['ok','Aucun événement signé ce week-end dans la base. Disponibilité à confirmer avec Germaine.'])}
+    else W.push(['','Date en semaine : capacité non confirmée, à vérifier avec Germaine.']);
+  }else W.push(['','Sans date, la disponibilité ne peut pas être vérifiée.']);
+  return {L,W,total,hasLoc};
+}
+function quoteText(q,r,p){
+  const lines=r.L.map(x=>'- '+x.label+(x.qty>1?' ('+x.qty+' × '+fmt(x.unit)+')':'')+' : '+fmt(x.total));
+  return `Estimation indicative${p?' pour '+p.name:''}${q.date?' — événement du '+fdateFull(q.date):''}${num(q.guests)?' — '+num(q.guests)+' invités':''}\n\n${lines.join('\n')||'(aucune ligne)'}\n\nTotal estimé : ${fmt(r.total)}\n\nCette estimation repose sur nos tarifs de référence. GBI Events s'occupe de votre événement de A à Z, avec un seul interlocuteur. Elle reste soumise à la vérification de la disponibilité et du matériel, puis à la confirmation de GBI Events.`;
+}
+function quoteHTML(){
+  const q=S.q,P=S.prospects.filter(p=>!['perdu','stop','signe'].includes(p.stage)).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+  const n=(k,l)=>`<label class="f"><span>${l}</span><input data-q="${k}" inputmode="decimal" value="${esc(q[k])}"></label>`;
+  const c=(k,l)=>`<label class="ck"><input type="checkbox" data-q="${k}"${q[k]?' checked':''}> ${l}</label>`;
+  return `<div class="grid2"><section class="card"><h2>Préparer un devis</h2>
+  <p class="note">Tarifs communiqués par GBI Events, modifiables dans l'onglet Règles. Le matériel est vérifié contre les réservations à la date choisie. Un devis préparé ici est une estimation : la disponibilité se confirme avec Germaine.</p>
+  <div class="fg w2"><label class="f"><span>Prospect</span><select data-q="pid"><option value="">— choisir —</option>${P.slice(0,500).map(p=>`<option value="${esc(p.id)}"${q.pid===p.id?' selected':''}>${esc(p.name)}${p.city?' ('+esc(p.city)+')':''}</option>`).join('')}</select></label>
+   <label class="f"><span>Date de l'événement</span><input type="date" data-q="date" value="${esc(q.date)}"></label>
+   <label class="f"><span>Type d'événement</span><select data-q="kind">${EVENT_KINDS.map(([k,l])=>`<option value="${k}"${q.kind===k?' selected':''}>${l}</option>`).join('')}</select></label></div>
+  <div class="sec-label">Traiteur</div>
+  <div class="fg"><label class="f"><span>Invités</span><input data-q="guests" inputmode="numeric" value="${esc(q.guests)}"></label>
+   <label class="f"><span>Formule</span><select data-q="formule"><option value="none">Aucune</option>${['classic','silver','gold'].map(k=>`<option value="${k}"${q.formule===k?' selected':''}>${cap(k)} — ${fmt(S.pricing[k])}/pers.</option>`).join('')}</select></label></div>
+  <div class="fg" style="margin-top:8px">${c('cocktail','Cocktail / mignardises')}${c('vin',"Vin d'honneur (dès "+S.pricing.vinMin+' inv.)')}${c('service','Service à table')}${c('fumee','Option fumée')}${c('plancha','Animation plancha')}</div>
+  <div class="sec-label">Décoration</div>
+  <div class="fg"><label class="f"><span>Formule</span><select data-q="deco"><option value="none">Aucune</option>${[30,50,100].map(k=>`<option value="${k}"${String(q.deco)===String(k)?' selected':''}${q.kind!=='mariage'?' disabled':''}>Pack mariage ${k} invités — ${fmt(S.pricing['deco'+k])}</option>`).join('')}<option value="custom"${q.deco==='custom'?' selected':''}>Sur mesure (dès ${fmt(S.pricing.decoMin)})</option></select></label>
+   <label class="f"><span>Montant sur mesure (€)</span><input data-q="decoCustom" inputmode="decimal" value="${esc(q.decoCustom)}"${q.deco==='custom'?'':' disabled'}></label></div>
+  <p class="note">${q.kind==='mariage'?'Mariage : les packs sont disponibles.':'Les packs sont réservés aux mariages. Hors mariage, la décoration se chiffre à la carte.'}</p>
+  <div class="sec-label">Location de matériel</div>
+  <div class="fg">${n('chaises','Chaises')}${n('tablesRect','Tables rectangulaires')}${n('tablesRondes','Tables rondes')}${n('nappes','Nappes')}${n('kits','Kits de vaisselle')}${n('couvertsOr','Couverts dorés')}${n('couvertsArg','Couverts argentés')}</div></section>
+  <aside><section class="card" id="qout"></section></aside></div>`;
+}
+function updateQuote(){
+  const out=$('#qout');if(!out)return;const q=S.q,p=byId(q.pid),r=calcQuote(q);
+  const dec=document.querySelector('[data-q="decoCustom"]');if(dec)dec.disabled=q.deco!=='custom';
+  const txt=quoteText(q,r,p);
+  out.innerHTML=`<h3>Estimation</h3>${r.L.length?`<div class="scroll-x"><table class="t"><thead><tr><th>Ligne</th><th class="r">Qté</th><th class="r">PU</th><th class="r">Total</th></tr></thead><tbody>${r.L.map(x=>`<tr><td>${esc(x.label)}</td><td class="r">${x.qty}</td><td class="r">${fmt(x.unit)}</td><td class="r">${fmt(x.total)}</td></tr>`).join('')}</tbody></table></div>`:'<p class="note">Ajoute des prestations à gauche.</p>'}
+   <div class="total"><span>Total estimé</span><b>${fmt(r.total)}</b></div>
+   <div class="warns">${r.W.map(([c,t])=>`<div class="${c}">${esc(t)}</div>`).join('')}</div>
+   <label class="f"><span>Texte du devis (modifiable)</span><textarea class="draft" id="qtext">${esc(txt)}</textarea></label>
+   <label class="ck" style="margin:8px 0"><input type="checkbox" data-q="validated"${q.validated?' checked':''}> Prix et disponibilité validés par Germaine</label>
+   <p style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="copy" data-from="qtext">Copier le texte</button><button class="btn primary" data-act="qsave" data-write${p&&r.total>0?'':' disabled'}>Enregistrer sur la fiche</button>${r.hasLoc&&q.date&&p?'<button class="btn" data-act="qreserve" data-write>Bloquer ce matériel</button>':''}</p>
+   <p class="note">${q.validated?"Avec la validation cochée, la fiche passe à « Devis envoyé ».":"Sans validation, le montant est enregistré mais la fiche ne passe pas à « Devis envoyé »."}</p>`;
+}
+async function saveQuote(){
+  const q=S.q,p=byId(q.pid);if(!p){toast('Choisis un prospect.',true);return}
+  const r=calcQuote(q);if(r.total<=0){toast('Le devis est vide.',true);return}
+  const patch={eventKind:q.kind||p.eventKind||'',quoteAmount:Math.round(r.total*100)/100,quoteText:($('#qtext')||{}).value||'',eventDate:q.date||p.eventDate||'',guests:num(q.guests)||p.guests||''};
+  if(q.validated&&['a_contacter','contacte','repondu','qualifie','devis'].includes(p.stage)){
+    patch.nextAction='Relancer le devis';patch.nextDate=addDays(today(),3);
+    if(p.stage==='devis'){patch.log=logAdd(p,'Devis mis à jour : '+fmt(patch.quoteAmount));if(await guard(()=>save(p.id,patch)))toast('Devis enregistré.')}
+    else if(await setStage(p,'devis',patch))toast('Devis enregistré, fiche passée à « Devis envoyé ».');
+  }else{
+    patch.log=logAdd(p,'Devis préparé (à valider) : '+fmt(patch.quoteAmount));
+    if(await guard(()=>save(p.id,patch)))toast('Montant enregistré. Valide avec Germaine avant envoi.');
+  }
+}
+
+/* ---------- messages ---------- */
+const FOOT_B2B="\n\nVous recevez ce message à titre professionnel. Pour ne plus être sollicité, répondez simplement « STOP » : nous ne vous écrirons plus.";
+const INTRO={lieu:p=>`${p.name} accueille des événements, et vos clients cherchent souvent des prestataires fiables.`,
+  planner:()=>`Vous coordonnez souvent plusieurs prestataires pour un même mariage ou un même événement.`,
+  agence:()=>`Votre agence monte des événements pour ses clients, et le traiteur, la décoration et le matériel reviennent à chaque fois.`,
+  traiteur:()=>`Quand un événement dépasse votre stock de matériel ou votre offre, nous pouvons compléter vos prestations.`,
+  entreprise:()=>`Pour vos réceptions, cocktails clients ou soirées d'équipe, coordonner traiteur, décoration et matériel prend du temps.`,
+  particulier:()=>''};
+const PITCH="GBI Events, spécialiste de l'événementiel clé en main en Île-de-France : traiteur (cocktails, buffets, mignardises, et la cuisine africaine en spécialité), décoration et location de matériel, avec un seul interlocuteur du début à la fin";
+const TPL=[
+ {id:'first',label:'1er message B2B (une seule offre)',kind:'b2b',build:(p,w,o)=>({s:o==='location'?'Location de matériel événementiel en Île-de-France':'Vos événements clé en main en Île-de-France',
+   b:`Bonjour,\n\nJe m'appelle ${w} et je travaille avec ${PITCH}.\n\n${(INTRO[p.segment]||INTRO.lieu)(p)} Nous pouvons vous proposer ${OFFER_TXT[o]}.\n\nSeriez-vous d'accord pour un échange de 10 minutes cette semaine ?\n\nCordialement,\n${w}\nGBI Events`+FOOT_B2B})},
+ {id:'follow',label:'Relance unique B2B',kind:'b2b',build:(p,w,o)=>({s:'Suite à mon message : GBI Events',b:`Bonjour,\n\nJe me permets une seule relance au sujet de mon message précédent : ${OFFER_TXT[o]}.\n\nL'idée est simple : un seul interlocuteur pour tout l'événement, au lieu de plusieurs prestataires à coordonner.\n\nSi le sujet n'est pas d'actualité, dites-le-moi et je ne reviendrai pas vers vous. Sinon, un échange de 10 minutes suffit pour voir si nous pouvons vous être utiles.\n\nCordialement,\n${w}\nGBI Events`+FOOT_B2B})},
+ {id:'reply',label:'Réponse à une demande entrante',kind:'reply',build:(p,w)=>({s:'Votre demande : GBI Events',b:`Bonjour,\n\nMerci pour votre demande. Nous pouvons prendre en charge votre événement de A à Z : traiteur, décoration et matériel. Pour vous préparer une proposition, pouvez-vous me préciser :\n- le type d'événement, la date et le lieu\n- le nombre d'invités\n- les prestations souhaitées (traiteur, décoration, location de matériel)\n- votre budget global, si vous en avez un\n\nJe vérifie la disponibilité et je reviens vers vous rapidement.\n\nCordialement,\n${w}\nGBI Events`})},
+ {id:'positive',label:'Réponse positive : proposer un appel',kind:'reply',build:(p,w)=>({s:'Re : GBI Events',b:`Bonjour,\n\nMerci pour votre retour. Je vous propose un court appel pour comprendre vos besoins : [créneau 1] ou [créneau 2] ?\n\nSi vous préférez, indiquez-moi le meilleur moment pour vous joindre.\n\nCordialement,\n${w}\nGBI Events`})},
+ {id:'network',label:'Message personnel (réseau, envoi individuel)',kind:'network',build:(p,w)=>({s:'',b:`Bonjour,\n\nJ'espère que vous allez bien. Je développe GBI Events : nous organisons des événements clé en main en Île-de-France (traiteur, décoration et matériel). Si vous ou quelqu'un de votre entourage prépare un mariage, une réception d'entreprise, un anniversaire, un baptême ou un baby shower, je serais ravi d'en parler.\n\nUne recommandation compte beaucoup pour nous. Merci !\n\n${w}`})},
+ {id:'review',label:"Après l'événement : avis et recommandation",kind:'reply',build:(p,w)=>({s:'Votre avis sur votre événement',b:`Bonjour,\n\nMerci de nous avoir fait confiance pour votre événement. Si vous êtes satisfait, un court avis nous aiderait beaucoup : [lien de l'avis].\n\nSi vous connaissez quelqu'un qui prépare un événement, n'hésitez pas à nous recommander.\n\nCordialement,\n${w}\nGBI Events`})}
+];
+function msgBlock(p,t,o){
+  if(!p)return 'Choisis un prospect.';
+  if(o==='pack'&&t.kind!=='network'&&!['planner','lieu'].includes(p.segment)&&p.eventKind!=='mariage')return 'Les packs sont réservés aux mariages. Choisis « Événement clé en main » ou une autre offre.';
+  if(p.optout||p.stage==='stop')return 'Opposition enregistrée : aucun message.';
+  if(t.kind==='b2b'&&p.segment==='particulier')return "Pas de prospection à froid vers un particulier (consentement préalable obligatoire). Utilise « Réponse à une demande entrante » si la personne a fait une demande.";
+  if(t.kind==='reply'&&p.segment==='particulier'&&!p.explicit)return "Ce particulier n'a pas fait de demande explicite. Coche « Demande explicite » dans sa fiche seulement si c'est le cas.";
+  return null;
+}
+function msgHTML(){
+  const m=S.m,P=S.prospects.filter(p=>!['perdu','stop'].includes(p.stage)).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+  return `<div class="grid2"><section class="card"><h2>Messages</h2>
+   <p class="note">Argument principal : le clé en main, un seul interlocuteur pour tout l'événement. Rédigés pour être copiés dans Gmail ou WhatsApp, puis marqués comme envoyés. Rien ne part automatiquement. Aucun prix ni date promis.</p>
+   <div class="fg w2"><label class="f"><span>Prospect</span><select data-m="pid"><option value="">— choisir —</option>${P.slice(0,500).map(p=>`<option value="${esc(p.id)}"${m.pid===p.id?' selected':''}>${esc(p.name)}${p.city?' ('+esc(p.city)+')':''}</option>`).join('')}</select></label>
+   <label class="f"><span>Modèle</span><select data-m="tpl">${TPL.map(t=>`<option value="${t.id}"${m.tpl===t.id?' selected':''}>${t.label}</option>`).join('')}</select></label>
+   <label class="f"><span>Offre mise en avant</span><select data-m="offer">${OFFERS.map(([k,l])=>`<option value="${k}"${m.offer===k?' selected':''}>${l}</option>`).join('')}</select></label></div></section>
+   <aside><section class="card" id="mout"></section></aside></div>`;
+}
+function updateMsg(){
+  const out=$('#mout');if(!out)return;const m=S.m,p=byId(m.pid),t=TPL.find(x=>x.id===m.tpl);
+  const block=msgBlock(p,t,m.offer);
+  if(block){out.innerHTML=`<h3>Brouillon</h3><div class="warns"><div class="${p?'bad':''}">${esc(block)}</div></div>`;return}
+  const r=t.build(p,S.who||'[Prénom]',m.offer);const hasPh=/\[[^\]]+\]/.test(r.b);
+  out.innerHTML=`<h3>Brouillon</h3>${r.s?`<label class="f"><span>Objet</span><input id="msubj" value="${esc(r.s)}"></label>`:''}
+   <label class="f" style="margin-top:8px"><span>Message (modifiable)</span><textarea class="draft" id="mtext">${esc(r.b)}</textarea></label>
+   ${hasPh?'<div class="warns"><div>Complète les passages entre crochets avant d\'envoyer.</div></div>':''}
+   ${!S.who?'<div class="warns"><div>Choisis « Je suis » en haut pour signer le message.</div></div>':''}
+   <p style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn" data-act="copy" data-from="mtext">Copier</button><button class="btn primary" data-act="sent" data-write>Marquer comme envoyé</button></p>
+   <p class="note">« Marquer comme envoyé » met à jour la fiche${t.kind==='b2b'?' et planifie la relance à J+4':''}.</p>`;
+}
+async function markSent(){
+  const m=S.m,p=byId(m.pid),t=TPL.find(x=>x.id===m.tpl);if(!p||msgBlock(p,t,m.offer))return;
+  const patch={lastContact:new Date().toISOString(),touches:(p.touches||0)+1};
+  if(t.id==='first'){patch.nextAction='Relance unique si pas de réponse';patch.nextDate=addDays(today(),4)}
+  else if(t.id==='follow'){patch.nextAction='Clôturer si toujours sans réponse';patch.nextDate=addDays(today(),7)}
+  else if(t.id==='reply'||t.id==='positive'){patch.nextAction='Qualifier : date, invités, services, budget';patch.nextDate=addDays(today(),1)}
+  else if(t.id==='network'){patch.nextAction='Suivre la réponse';patch.nextDate=addDays(today(),5)}
+  patch.log=logAdd(p,'Message envoyé : '+t.label);
+  if(p.stage==='a_contacter'){if(await setStage(p,'contacte',patch))toast('Fiche passée à « Contacté ».')}
+  else if(await guard(()=>save(p.id,patch)))toast('Envoi enregistré.');
+}
+
+/* ---------- canaux ---------- */
+function channelsHTML(){
+  const rows=CHANNELS.map(([k,l])=>{
+    const P=S.prospects.filter(p=>p.channel===k);if(!P.length&&!S.spend[k])return null;
+    const f=funnel(P),sp=S.spend[k]||0,ca=sum(P.filter(p=>p.signedDate),p=>p.signedAmount);
+    const cost=(n)=>sp>0&&n>0?fmt(sp/n):'—';
+    return `<tr><td><b>${l}</b></td><td class="r">${f[0][1]}</td><td class="r">${f[1][1]}</td><td class="r">${f[2][1]}</td><td class="r">${f[3][1]}</td><td class="r">${f[4][1]}</td><td class="r">${f[5][1]}</td><td class="r">${fmt(ca)}</td>
+     <td class="r"><input data-spend="${k}" inputmode="decimal" value="${sp||''}" placeholder="0" style="width:74px;text-align:right;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:3px 6px" data-write></td><td class="r">${cost(f[3][1])}</td><td class="r">${cost(f[4][1])}</td><td class="r">${cost(f[5][1])}</td></tr>`}).filter(Boolean);
+  const P=S.prospects,q=P.filter(p=>p.qualifiedAt).length,sg=P.filter(p=>p.signedDate);
+  const active=P.filter(p=>['qualifie','devis'].includes(p.stage));
+  let fc;
+  if(!q||!sg.length)fc=`<p>Pas encore de taux de conversion mesuré (${q} opportunité(s) qualifiée(s), ${sg.length} vente(s)). La prévision apparaîtra dès la première vente, sans taux inventé.</p>`;
+  else{const rate=sg.length/q,panier=sum(sg,p=>p.signedAmount)/sg.length,v=active.length*rate;
+    fc=`<p><b>Prévision provisoire</b> (${q} qualifiées, ${sg.length} signée(s)${q<10?' — échantillon faible, forte incertitude':''}) : taux observé ${Math.round(rate*100)} %, panier moyen ${fmt(panier)}.</p>
+     <p>${active.length} opportunité(s) actives × ${Math.round(rate*100)} % ≈ <b>${v.toFixed(1)} vente(s)</b> ≈ <b>${fmt(v*panier)}</b>.</p>`}
+  return `<section class="card"><h2>Performance par canal</h2><p class="note">Les dépenses se saisissent à la main (budget pub visé par Germaine : 400 à 500 € par mois). Les coûts se calculent par prospect qualifié, par devis et par vente.</p>
+  ${rows.length?`<div class="scroll-x"><table class="t"><thead><tr><th>Canal</th><th class="r">Prospects</th><th class="r">Contactés</th><th class="r">Réponses</th><th class="r">Qualifiés</th><th class="r">Devis</th><th class="r">Ventes</th><th class="r">CA signé</th><th class="r">Dépense €</th><th class="r">€/qualifié</th><th class="r">€/devis</th><th class="r">€/vente</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>`:'<div class="empty">Aucune donnée par canal pour l\'instant.</div>'}</section>
+  <div class="grid2" style="margin-top:14px"><section class="card"><h3>Prévision</h3>${fc}<p class="note">Formules : ventes = opportunités actives × taux observé ; CA = ventes × panier moyen observé.</p></section>
+  <section class="card"><h3>Sources de leads</h3><ul class="plain"><li>Toutes les sources ont leur canal : email et téléphone de prospection, Instagram, Facebook et TikTok en organique, Meta Ads, Google Ads, fiche Google, site, Leboncoin, WhatsApp, recommandations.</li><li>Une fiche créée avec un canal entrant (Instagram, Meta, Google, site, Leboncoin, WhatsApp) arrive directement au statut « Répondu », à traiter sous 2 h.</li><li>Leads Meta : export CSV du formulaire, puis « Importer CSV ».</li><li>Juge chaque canal sur le coût par devis et par vente, pas sur les clics.</li></ul><p class="note">Pas encore automatique : la remontée directe des formulaires et messages, et l'alerte Telegram à chaque demande de devis, se construisent dans Make (étape suivante).</p></section></div>`;
+}
+
+
+/* ---------- matériel : stock par date, réservations, retours ---------- */
+function resLate(x){return x.status==='sortie'&&(x.end||x.start)<today()}
+function resSorted(L){return L.slice().sort((a,b)=>String(a.start).localeCompare(String(b.start))||String(a.client).localeCompare(String(b.client)))}
+function matAlerts(){const t=today();return S.reservations.filter(x=>resLate(x)||x.status==='demande'||(['option','confirmee'].includes(x.status)&&x.start&&x.start<=addDays(t,2))).length}
+function matCheck(items,start,end,exclude){
+  const L=MAT.filter(([k])=>num((items||{})[k])>0).map(([k,l,sk,pk])=>{const n=num(items[k]),a=avail(k,start,end||start,exclude);return {k,l,n,a,ok:!!a&&n<=a.free,price:n*num(S.pricing[pk])}});
+  return {L,miss:L.filter(x=>x.a&&!x.ok),unk:L.filter(x=>!x.a)};
+}
+function resRow(x){
+  const late=resLate(x);
+  const btn=(st,l,c='')=>`<button class="btn sm ${c}" data-act="rstatus" data-id="${esc(x.id)}" data-st="${st}" data-write>${l}</button>`;
+  let acts='';
+  if(x.status==='demande')acts=btn('option','Bloquer (option)','primary')+btn('annulee','Annuler');
+  else if(x.status==='option')acts=btn('confirmee','Confirmer','primary')+btn('annulee','Annuler');
+  else if(x.status==='confirmee')acts=btn('sortie','Matériel sorti','primary')+btn('annulee','Annuler');
+  else if(x.status==='sortie')acts=`<span class="sm muted">Quantités rendues :</span> ${MAT.filter(([k])=>num((x.items||{})[k])>0).map(([k,l])=>`<label class="sm">${esc(l)} <input id="ret-${esc(x.id)}-${k}" inputmode="numeric" value="${num(x.items[k])}" style="width:60px;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:3px 6px"></label>`).join(' ')} <button class="btn sm primary" data-act="rreturn" data-id="${esc(x.id)}" data-write>Valider le retour</button>`;
+  const miss=x.missing&&Object.keys(x.missing).some(k=>num(x.missing[k])>0)?`<div class="sm" style="color:var(--bad)">Manquant au retour : ${esc(itemsTxt(x.missing))}</div>`:'';
+  const cls=late?'bad':x.status==='demande'?'warn':x.status==='sortie'?'brass':BLOCKING.includes(x.status)?'hot':x.status==='rendue'?'good':'off';
+  return `<div class="card" style="padding:10px 12px;margin-top:8px"><div class="t" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">${chip(late?'En retard':RSTAT_L[x.status]||x.status,cls)}<b>${esc(x.client||'Sans nom')}</b><span class="muted sm">${fdateFull(x.start)}${x.end&&x.end!==x.start?' → '+fdateFull(x.end):''}${x.phone?' · '+esc(fmtPhone(x.phone)):''}${x.channel?' · '+esc(CH_L[x.channel]||x.channel):''}</span></div>
+   <div class="sm" style="margin:4px 0">${esc(itemsTxt(x.items))}${x.note?' · <span class="muted">'+esc(x.note)+'</span>':''}</div>${miss}
+   <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">${acts}</div></div>`;
+}
+function matHTML(){
+  const r=S.r,t=today(),day=S.matDay||t,R=S.reservations;
+  const n=(k,l)=>`<label class="f"><span>${l}</span><input data-ri="${k}" inputmode="numeric" value="${esc(r.items[k]||'')}"></label>`;
+  const stockRows=MAT.map(([k,l])=>{const a=avail(k,day,day,null);return `<tr><td>${l}</td><td class="r">${a?a.stock:'?'}</td><td class="r">${a?a.used:'—'}</td><td class="r"><b style="color:${a&&a.free<=0?'var(--bad)':'inherit'}">${a?a.free:'—'}</b></td></tr>`}).join('');
+  const out7=resSorted(R.filter(x=>['option','confirmee'].includes(x.status)&&x.start&&x.start<=addDays(t,7)));
+  const back=R.filter(x=>x.status==='sortie').sort((a,b)=>String(a.end||a.start).localeCompare(String(b.end||b.start)));
+  const open=resSorted(R.filter(x=>['demande','option','confirmee'].includes(x.status)));
+  const done=R.filter(x=>['rendue','annulee'].includes(x.status)).sort((a,b)=>String(b.updated||'').localeCompare(String(a.updated||''))).slice(0,10);
+  const mini=x=>`<div class="ev"><span><b>${fdate(x.status==='sortie'?(x.end||x.start):x.start)}</b> · ${esc(x.client||'')}</span><span class="muted sm">${esc(itemsTxt(x.items))}</span></div>`;
+  const sf=([k,l])=>`<label class="f"><span>${l}</span><input data-price="${k}" inputmode="numeric" value="${S.pricing[k]==null?'':S.pricing[k]}" placeholder="inconnu"></label>`;
+  return `<div class="grid2"><section class="card"><h2>Nouvelle demande de location</h2>
+   <p class="note">Pour une demande reçue par Leboncoin, téléphone, Instagram ou le site. Le stock est vérifié sur toute la période, en comptant le matériel déjà bloqué ou pas encore rendu. Une « demande » ne bloque rien : seul le passage en « Option » réserve le matériel.</p>
+   <div class="fg w2"><label class="f"><span>Client</span><input data-r="client" value="${esc(r.client)}"></label><label class="f"><span>Téléphone</span><input data-r="phone" type="tel" value="${esc(r.phone)}"></label>
+    <label class="f"><span>Canal</span><select data-r="channel">${CHANNELS.map(([k,l])=>`<option value="${k}"${r.channel===k?' selected':''}>${l}</option>`).join('')}</select></label>
+    <label class="f"><span>Date de retrait (ou livraison)</span><input data-r="start" type="date" value="${esc(r.start)}"></label><label class="f"><span>Date de retour</span><input data-r="end" type="date" value="${esc(r.end)}"></label></div>
+   <div class="sec-label">Quantités</div><div class="fg">${MAT.map(([k,l])=>n(k,l)).join('')}</div>
+   <label class="f" style="margin-top:8px"><span>Note (adresse, livraison, caution…)</span><input data-r="note" value="${esc(r.note)}"></label>
+   <div id="rout" style="margin-top:10px"></div></section>
+  <aside><section class="card"><h3>Disponible le <input type="date" data-matday="1" value="${day}" style="background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:4px 6px"></h3>
+   <div class="scroll-x"><table class="t"><thead><tr><th>Matériel</th><th class="r">Stock</th><th class="r">Réservé</th><th class="r">Libre</th></tr></thead><tbody>${stockRows}</tbody></table></div>
+   <p class="note">Libre = stock − matériel en option, confirmé ou sorti ce jour-là. Un matériel sorti et pas rendu reste compté jusqu'au retour.</p></section>
+   <section class="card"><h3>Sorties à préparer (7 jours)</h3>${out7.length?out7.map(mini).join(''):'<p class="note">Aucune sortie prévue.</p>'}</section>
+   <section class="card"><h3>Retours attendus</h3>${back.length?back.map(x=>resLate(x)?mini(x).replace('<b>','<b style="color:var(--bad)">En retard · '):mini(x)).join(''):'<p class="note">Aucun matériel dehors.</p>'}</section></aside></div>
+  <section class="card" style="margin-top:14px"><h3>Matériel chez les clients (${back.length})</h3>${back.length?back.map(resRow).join(''):'<p class="note">Rien à récupérer.</p>'}</section>
+  <section class="card" style="margin-top:14px"><h3>Demandes et réservations à venir (${open.length})</h3>${open.length?open.map(resRow).join(''):'<p class="note">Aucune réservation en cours.</p>'}</section>
+  ${done.length?`<section class="card" style="margin-top:14px"><h3>Terminées récemment</h3>${done.map(resRow).join('')}</section>`:''}
+  <section class="card" style="margin-top:14px"><h3>Stock total</h3><p class="note">À tenir à jour : un manquant déclaré au retour réduit le stock automatiquement. Tables rondes : 8 ou 23 selon les relevés, à confirmer. Nappes : stock inconnu.</p><div class="fg">${STOCK_FIELDS.map(sf).join('')}</div>
+   <p style="margin-top:10px"><button class="btn primary" data-act="pricesave" data-write>Enregistrer le stock</button></p></section>`;
+}
+function updateMat(){
+  const out=$('#rout');if(!out)return;const r=S.r;
+  if(!r.start){out.innerHTML='<div class="warns"><div>Indique la date de retrait pour vérifier le stock.</div></div>';return}
+  if(r.end&&r.end<r.start){out.innerHTML='<div class="warns"><div class="bad">La date de retour est avant la date de retrait.</div></div>';return}
+  const c=matCheck(r.items,r.start,r.end||r.start,null);
+  if(!c.L.length){out.innerHTML='<div class="warns"><div>Ajoute au moins une quantité.</div></div>';return}
+  const v=c.miss.length?`<div class="bad">Impossible de tout fournir sur cette période : ${c.miss.map(x=>x.l.toLowerCase()+' (manque '+(x.n-Math.max(0,x.a.free))+')').join(', ')}. Propose une autre date ou une quantité réduite.</div>`
+    :c.unk.length?`<div>Stock inconnu pour ${c.unk.map(x=>x.l.toLowerCase()).join(', ')} : vérifie à la main avant de confirmer.</div>`
+    :`<div class="ok">Tout est disponible sur la période.</div>`;
+  out.innerHTML=`<div class="scroll-x"><table class="t"><thead><tr><th>Matériel</th><th class="r">Demandé</th><th class="r">Libre</th><th class="r">Prix</th></tr></thead><tbody>${c.L.map(x=>`<tr><td>${esc(x.l)}</td><td class="r">${x.n}</td><td class="r" style="color:${x.a&&!x.ok?'var(--bad)':'inherit'}">${x.a?Math.max(0,x.a.free):'?'}</td><td class="r">${fmt(x.price)}</td></tr>`).join('')}</tbody></table></div>
+   <div class="total"><span>Location (indicatif, hors livraison)</span><b>${fmt(sum(c.L,x=>x.price))}</b></div>
+   <div class="warns">${v}</div>
+   <p style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="rsave" data-st="demande" data-write>Enregistrer la demande</button><button class="btn primary" data-act="rsave" data-st="option" data-write${c.miss.length||c.unk.length?' disabled':''}>Bloquer le matériel (option)</button></p>`;
+}
+async function addReservation(d){
+  const now=new Date().toISOString();
+  return guard(()=>S.db.collection('reservations').add({...d,created:now,updated:now,by:S.who||'—',log:[{t:now,by:S.who||'—',x:'Créée : '+(RSTAT_L[d.status]||d.status)}]}));
+}
+
+/* ---------- règles / réglages ---------- */
+function rulesHTML(){
+  const pr=S.pricing,oppo=S.prospects.filter(p=>p.optout||p.stage==='stop');
+  const pf=([k,l])=>`<label class="f"><span>${l}</span><input data-price="${k}" inputmode="decimal" value="${pr[k]==null?'':pr[k]}"></label>`;
+  const sf=([k,l])=>`<label class="f"><span>${l}</span><input data-price="${k}" inputmode="numeric" value="${pr[k]==null?'':pr[k]}" placeholder="inconnu"></label>`;
+  return `<div class="grid2"><div><section class="card"><h2>Tarifs communiqués</h2><p class="note">Repères issus des échanges : composition, minimums et conditions restent à vérifier avec Germaine avant tout engagement.</p><div class="fg">${PRICE_FIELDS.map(pf).join('')}</div>
+   <p class="note">Le stock de matériel se gère dans l'onglet Matériel.</p>
+   <p style="margin-top:10px"><button class="btn primary" data-act="pricesave" data-write>Enregistrer les tarifs</button></p></section>
+  <section class="card"><h3>Potentiel et intention</h3><p class="note">Deux mesures séparées. Le potentiel sert à choisir qui contacter (grille provisoire, à tester) ; l'intention dit si l'achat est proche.</p>
+   <table class="t"><tbody>${SCORE.map(([,l,w])=>`<tr><td>${l}</td><td class="r">+${w}</td></tr>`).join('')}</tbody></table>
+   <p class="note">« Sales Ready » = intention moyenne ou forte + signal observé + prochaine étape. Un score élevé seul n'est jamais un lead chaud.</p></section></div>
+  <div><section class="card"><h3>Positionnement GBI Events</h3><ul class="plain">
+   <li><b>Argument principal : le clé en main.</b> Un seul interlocuteur pour le traiteur, la décoration et le matériel, au lieu de plusieurs prestataires.</li>
+   <li>Traiteur pour tout type de client : réceptions, cocktails, buffets, mignardises. La cuisine africaine est la spécialité mise en avant, pas toute l'offre.</li>
+   <li>Packs : uniquement pour les mariages. Hors mariage, devis à la carte.</li>
+   <li>Panier minimum : ${fmt(S.pricing.minPanier)} par événement (auparavant 3 000 €). Au-dessus, on prend en priorité.</li></ul></section>
+  <section class="card"><h3>Conformité</h3><ul class="plain">
+   <li>Email B2B : sans consentement préalable si le message concerne la fonction du destinataire, avec information et opposition gratuite. ${chip('Vérifié','good')}</li>
+   <li>Email et SMS vers un particulier : consentement préalable. Pas de cold B2C. ${chip('Vérifié','good')}</li>
+   <li>Téléphone vers un particulier : consentement préalable depuis le 11/08/2026. ${chip('Vérifié','good')}</li>
+   <li>Pas de suivi d'ouverture par pixel (consentement requis). ${chip('Vérifié','good')}</li>
+   <li>Gmail Workspace : 2 000 messages/jour ; SPF, DKIM et DMARC à configurer. ${chip('Vérifié','good')}</li>
+   <li>Conditions de Meta, Le Bon Coin et des groupes ; téléphone B2B. ${chip('À valider','warn')}</li></ul>
+   <p class="note">Ce n'est pas un avis juridique. L'opposition se traite ici : bouton « Opposition » sur la fiche, qui bloque tout message.</p></section>
+  <section class="card"><h3>Registre d'opposition (${oppo.length})</h3>${oppo.length?`<ul class="plain">${oppo.map(p=>`<li>${esc(p.name)}${p.city?' ('+esc(p.city)+')':''}</li>`).join('')}</ul>`:'<p class="note">Aucune opposition.</p>'}</section>
+  <section class="card"><h3>Données à confirmer</h3><ul class="plain"><li>Capacité en semaine (1 événement par week-end connu).</li><li>Prix des packs mariage clé en main et tarif cocktail / mignardises.</li><li>Location de matériel seule : minimum de commande ou non.</li><li>Tables rondes : 8 ou 23 en stock.</li><li>Zones, frais de livraison, installation et reprise, minimums.</li><li>Marges ou coûts variables par prestation.</li><li>Qui répond aux prospects, et sous quel délai.</li></ul></section></div></div>`;
+}
+
+/* ---------- tiroir fiche ---------- */
+function blank(){return {name:'',segment:'lieu',channel:'b2b',offer:'partenariat',stage:'a_contacter',intent:0,eventKind:'',score:{},owner:S.who||'Kissima',discovered:today(),city:'',dept:'',website:'',email:'',phone:'',instagram:'',source:'',proof:'',signal:'',nextAction:'',nextDate:'',eventDate:'',guests:'',budget:'inconnu',budgetVal:'',quoteAmount:'',signedAmount:'',cashedAmount:'',lostReason:'',notes:'',explicit:false,optout:false,touches:0,log:[]}}
+function drawerHTML(){
+  const D=S.drawer,p=D.id?byId(D.id):blank();if(!p){S.drawer=null;return ''}
+  const I=(l,n,t='text',x='')=>`<label class="f"><span>${l}</span><input data-f="${n}" type="${t}" value="${esc(p[n]==null?'':p[n])}" ${x}></label>`;
+  const SEL=(l,n,opts)=>`<label class="f"><span>${l}</span><select data-f="${n}">${opts.map(([k,t])=>`<option value="${esc(k)}"${String(p[n])===String(k)?' selected':''}>${esc(t)}</option>`).join('')}</select></label>`;
+  const hist=(p.log||[]).slice(-15).reverse();
+  const cf=p.eventDate?conflicts(p.eventDate,p.id,['signe']):[];
+  return `<div class="panel" role="dialog" aria-label="Fiche prospect">
+  <div class="ph"><div><h2>${D.id?esc(p.name):'Nouveau prospect'}</h2>${D.id?`<span class="muted sm">${esc(SEG_L[p.segment]||'')} · ${esc(CH_L[p.channel]||'')} · potentiel ${pot(p)}/100 (provisoire)</span>`:''}</div><button class="btn sm" data-act="close">Fermer</button></div>
+  ${D.id?`<div class="stages" role="group" aria-label="Étape">${STAGES.map(([k,l])=>`<button data-act="stage" data-st="${k}" data-write class="${p.stage===k?'on':''}">${l}</button>`).join('')}</div>`:''}
+  ${D.id&&briefOf(p)?`<div class="sec-label">Résumé</div>${briefHTML(p)}<div class="sm muted">Trouvé le ${fdateFull(leadDay(p))}</div>`:''}
+  <div class="sec-label">Coordonnées</div>
+  <div class="fg w2">${I('Nom','name')}${SEL('Segment','segment',SEGMENTS)}${SEL('Canal','channel',CHANNELS)}${SEL('Offre d\'entrée','offer',OFFERS)}${SEL("Type d'événement",'eventKind',EVENT_KINDS)}
+   ${I('Ville','city')}${I('Site web','website','text')}${I('Email professionnel','email','text')}${I('Téléphone','phone','text')}${I('Instagram','instagram')}${SEL('Responsable','owner',[['Kissima','Kissima'],['Germaine','Germaine']])}
+   ${I('Source','source')}${I('URL de la preuve','proof')}</div>
+  <div class="sec-label">Qualification</div>
+  <div class="fg w2">${SEL('Intention d\'achat','intent',INTENT.map((l,i)=>[i,l]))}${I('Signal observé (preuve)','signal')}</div>
+  <div class="fg" style="margin-top:8px">${SCORE.map(([k,l,w])=>`<label class="ck"><input type="checkbox" data-sc="${k}"${p.score&&p.score[k]?' checked':''}> ${l} (+${w})</label>`).join('')}</div>
+  <label class="ck" style="margin-top:8px"><input type="checkbox" data-f="explicit"${p.explicit?' checked':''}> Demande explicite du prospect (obligatoire pour un particulier)</label>
+  <div class="fg w2" style="margin-top:8px">${I('Prochaine action','nextAction')}${I('Date de la prochaine action','nextDate','date')}</div>
+  <div class="sec-label">Événement et montants</div>
+  <div class="fg">${I("Date de l'événement",'eventDate','date')}${I('Invités','guests','text','inputmode="numeric"')}${SEL('Budget','budget',[['inconnu','Inconnu'],['estimé','Estimé'],['confirmé','Confirmé']])}${I('Montant du budget (€)','budgetVal','text','inputmode="decimal"')}
+   ${I('Devis (€)','quoteAmount','text','inputmode="decimal"')}${I('Signé (€)','signedAmount','text','inputmode="decimal"')}${I('Encaissé (€)','cashedAmount','text','inputmode="decimal"')}${I('Motif de perte','lostReason')}</div>
+  ${cf.length?`<div class="warns"><div class="bad">Week-end déjà réservé par ${esc(cf[0].name)}.</div></div>`:''}
+  ${num(p.budgetVal)>0&&num(p.budgetVal)<num(S.pricing.minPanier)?`<div class="warns"><div class="bad">Budget sous le panier minimum de ${fmt(S.pricing.minPanier)} : propose le clé en main pour monter le panier, ou passe en Perdu.</div></div>`:''}
+  ${p.offer==='pack'&&p.eventKind&&p.eventKind!=='mariage'?`<div class="warns"><div class="bad">Les packs sont réservés aux mariages. Choisis une autre offre d'entrée.</div></div>`:''}
+  <label class="f"><span>Notes</span><textarea data-f="notes">${esc(p.notes||'')}</textarea></label>
+  <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-act="save" data-write>Enregistrer</button>
+   ${D.id?`<button class="btn" data-act="msg" data-id="${esc(p.id)}">Message</button><button class="btn" data-act="quoteopen" data-id="${esc(p.id)}">Devis</button>
+   <button class="btn danger" data-act="stage" data-st="stop" data-write>Opposition reçue</button>
+   <button class="btn danger" data-act="${S.confirmDel===p.id?'delok':'del'}" data-write>${S.confirmDel===p.id?'Confirmer la suppression':'Supprimer'}</button>`:''}</div>
+  ${D.id?`<div class="sec-label">Journal</div><label class="f"><span>Ajouter une note au journal</span><input id="lognote" placeholder="Ex. : appelé, répondeur ; rappel jeudi"></label><p><button class="btn sm" data-act="lognote" data-write>Ajouter</button></p>
+   <div class="log">${hist.length?hist.map(h=>`<div><time>${fdate(h.t)} ${String(h.t).slice(11,16)}</time><span><b>${esc(h.by)}</b> ${esc(h.x)}</span></div>`).join(''):'<span class="muted">Aucun historique.</span>'}</div>`:''}</div>`;
+}
+function collect(){
+  const P={score:{}};
+  document.querySelectorAll('#drawer [data-f]').forEach(el=>{const n=el.dataset.f;let v;
+    if(el.type==='checkbox')v=el.checked;else v=el.value.trim();
+    if(['guests','quoteAmount','signedAmount','cashedAmount','budgetVal'].includes(n))v=v===''?'':num(v);
+    if(n==='intent')v=Number(v)||0;P[n]=v});
+  document.querySelectorAll('#drawer [data-sc]').forEach(el=>{P.score[el.dataset.sc]=el.checked});
+  return P;
+}
+function openDrawer(id){S.drawer={id:id||null};S.confirmDel=null;const d=$('#drawer');d.innerHTML=drawerHTML();d.hidden=false}
+function closeDrawer(){S.drawer=null;S.confirmDel=null;const d=$('#drawer');d.hidden=true;d.innerHTML='';if(S.dirty)refresh()}
+function reDrawer(){if(!S.drawer)return;const d=$('#drawer'),sc=d.querySelector('.panel')?d.querySelector('.panel').scrollTop:0;d.innerHTML=drawerHTML();const pn=d.querySelector('.panel');if(pn)pn.scrollTop=sc}
+
+/* ---------- rendu général ---------- */
+function renderTabs(){
+  const n=queue().length;
+  const T=[['today','Aujourd\'hui',n],['calls','Appels',callQueue().length||''],['nophone','Sans téléphone',noPhoneList().length||''],['pipeline','Pipeline'],['prospects','Prospects'],['quote','Devis'],['materiel','Matériel',matAlerts()||''],['messages','Messages'],['channels','Canaux'],['rules','Règles']];
+  $('#tabs').innerHTML=T.map(([k,l,c])=>`<button data-act="tab" data-v="${k}"${S.view===k?' aria-current="page"':''}>${l}${c?`<span class="n">${c}</span>`:''}</button>`).join('');
+  const w=$('#who');w.innerHTML=`<option value="">— choisir —</option><option${S.who==='Kissima'?' selected':''}>Kissima</option><option${S.who==='Germaine'?' selected':''}>Germaine</option>`;
+}
+function banners(){
+  let h='';
+  if(S.offline)h+=`<div class="banner bad">Connexion à la base impossible. Vérifie ta connexion internet, puis recharge la page.</div>`;
+  else if(S.err)h+=`<div class="banner bad">Base partagée : lecture impossible (${esc(S.err)}). Reconnecte-toi et recharge la page.</div>`;
+  else if(S.db&&!S.canWrite)h+=`<div class="banner">Lecture seule : ton compte n'a pas le droit de modifier. Demande à Germaine de t'ajouter comme membre.</div>`;
+  $('#banners').innerHTML=h;
+  const on=!!S.db&&!S.err;$('#sync .dot').className='dot '+(on?(S.canWrite?'on':''):'off');
+  $('#synctext').textContent=S.offline?'Hors ligne':S.err?'Erreur':!S.db?'Connexion…':S.canWrite?'Base partagée':'Lecture seule';
+}
+function render(){
+  renderTabs();banners();
+  main.innerHTML=(VIEWS[S.view]||VIEWS.today)();
+  if(S.view==='quote')updateQuote();if(S.view==='messages')updateMsg();if(S.view==='materiel')updateMat();
+  $('#app').classList.toggle('ro',!S.canWrite);S.dirty=false;
+}
+function refresh(){
+  const a=document.activeElement;
+  if(a&&main.contains(a)&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)){S.dirty=true;renderTabs();return}
+  render();
+}
+
+/* ---------- événements ---------- */
+const ACT={
+  tab(t){S.view=t.dataset.v;try{localStorage.setItem('gbi_view',S.view)}catch(e){}render();window.scrollTo(0,0)},
+  open(t){openDrawer(t.dataset.id)},
+  newp(){openDrawer(null)},
+  close(){closeDrawer()},
+  showall(){S.showAll=!S.showAll;render()},
+  importtoggle(){S.showImport=!S.showImport;render()},
+  async importrun(){let txt=$('#imptext').value;const f=$('#impfile').files[0];if(f)txt=await f.text();if(!txt.trim()){$('#impres').textContent='Colle du contenu ou choisis un fichier.';return}await runImport(txt)},
+  export(){exportCSV()},
+  async save(){
+    const patch=collect();if(!patch.name){toast('Le nom est obligatoire.',true);return}
+    const D=S.drawer;
+    if(D.id){const p=byId(D.id);patch.log=logAdd(p,'Fiche modifiée');if(await guard(()=>save(D.id,patch))){toast('Fiche enregistrée.');reDrawer()}}
+    else{
+      const now=new Date().toISOString(),d={...blank(),...patch,created:now,updated:now,log:[{t:now,by:S.who||'—',x:'Fiche créée'}]};
+      if(INBOUND.includes(d.channel)){d.stage='repondu';d.repliedAt=now;d.firstContact=now;d.explicit=true;d.intent=d.intent||1;d.signal=d.signal||'Demande reçue';if(!d.nextAction){d.nextAction='Répondre sous 2 h et qualifier le besoin';d.nextDate=today()}}
+      if(!d.nextAction){d.nextAction='Envoyer le 1er message';d.nextDate=today()}
+      if(await guard(()=>S.db.collection('prospects').add(d))){toast('Prospect ajouté.');closeDrawer()}
+    }
+  },
+  async stage(t){const D=S.drawer;if(!D||!D.id)return;const p=byId(D.id),patch=collect();if(await setStage(p,t.dataset.st,patch)){toast('Étape : '+STAGE_L[t.dataset.st]);reDrawer()}},
+  async lognote(){const D=S.drawer,v=$('#lognote').value.trim();if(!D||!D.id||!v)return;const p=byId(D.id);if(await guard(()=>save(D.id,{log:logAdd(p,v),lastContact:new Date().toISOString()}))){reDrawer()}},
+  del(){S.confirmDel=S.drawer.id;reDrawer()},
+  async delok(){const id=S.drawer.id;if(await guard(()=>S.db.doc('prospects/'+id).delete())){toast('Fiche supprimée.');closeDrawer()}},
+  msg(t,e){e.stopPropagation();S.m.pid=t.dataset.id;if(S.drawer)closeDrawer();S.view='messages';const p=byId(t.dataset.id);if(p){S.m.tpl=p.stage==='repondu'?'reply':p.stage==='contacte'?'follow':p.channel==='reco'?'network':'first';S.m.offer=p.offer||'partenariat'}render()},
+  async callres(t){await callResult(t.dataset.r)},
+  callskip(){if(S.call.pid)S.call.skip.push(S.call.pid);S.call.pid='';render()},
+  async phonesave(t){const el=document.getElementById('ph-'+t.dataset.id);const v=el?el.value.trim():'';if(String(v).replace(/\D/g,'').length<9){toast('Numéro invalide.',true);return}const p=byId(t.dataset.id);if(await guard(()=>save(p.id,{phone:v,log:logAdd(p,'Téléphone ajouté')})))toast('Numéro enregistré.')},
+  quoteopen(t){const p=byId(t.dataset.id);S.q.pid=t.dataset.id;if(p){S.q.kind=p.eventKind||'';if(p.eventDate)S.q.date=p.eventDate;if(p.guests)S.q.guests=String(p.guests)}closeDrawer();S.view='quote';render()},
+  async copy(t){const el=document.getElementById(t.dataset.from);if(!el)return;try{await navigator.clipboard.writeText(el.value);toast('Copié.')}catch(e){el.focus();el.select();toast('Sélectionné : copie avec Ctrl/Cmd + C.')}},
+  qsave(){saveQuote()},
+  async rsave(t){
+    const r=S.r,st=t.dataset.st;
+    if(!r.client.trim()){toast('Indique le nom du client.',true);return}
+    if(!r.start){toast('Indique la date de retrait.',true);return}
+    const items={};MAT.forEach(([k])=>{const n=num(r.items[k]);if(n>0)items[k]=n});
+    if(!Object.keys(items).length){toast('Ajoute au moins une quantité.',true);return}
+    if(st==='option'){const c=matCheck(items,r.start,r.end||r.start,null);if(c.miss.length||c.unk.length){toast('Stock insuffisant ou inconnu : impossible de bloquer.',true);return}}
+    if(await addReservation({client:r.client.trim(),phone:r.phone.trim(),channel:r.channel,start:r.start,end:r.end||r.start,note:r.note.trim(),items,status:st})){
+      toast(st==='option'?'Matériel bloqué.':'Demande enregistrée (rien n\'est bloqué).');S.r={client:'',phone:'',channel:r.channel,start:'',end:'',note:'',items:{}};render()}
+  },
+  async rstatus(t){
+    const x=S.reservations.find(y=>y.id===t.dataset.id),st=t.dataset.st;if(!x)return;
+    if(BLOCKING.includes(st)&&!BLOCKING.includes(x.status)){const c=matCheck(x.items,x.start,x.end,x.id);if(c.miss.length){toast('Plus assez de stock sur cette période : '+c.miss.map(y=>y.l.toLowerCase()).join(', ')+'.',true);return}if(c.unk.length)toast('Stock inconnu pour '+c.unk.map(y=>y.l.toLowerCase()).join(', ')+' : vérifie à la main.',true)}
+    const now=new Date().toISOString(),u={status:st,updated:now,log:[...(x.log||[]).slice(-29),{t:now,by:S.who||'—',x:'Statut : '+RSTAT_L[st]}]};if(st==='sortie')u.outAt=now;
+    if(await guard(()=>S.db.doc('reservations/'+x.id).update(u)))toast(RSTAT_L[st]+'.');
+  },
+  async rreturn(t){
+    const x=S.reservations.find(y=>y.id===t.dataset.id);if(!x)return;
+    const returned={},missing={};let lost=false;
+    MAT.forEach(([k])=>{const sent=num((x.items||{})[k]);if(!(sent>0))return;const el=document.getElementById('ret-'+x.id+'-'+k);const back=Math.max(0,Math.min(sent,el?num(el.value):sent));returned[k]=back;if(sent-back>0){missing[k]=sent-back;lost=true}});
+    const now=new Date().toISOString();
+    const ok=await guard(()=>S.db.doc('reservations/'+x.id).update({status:'rendue',returnedAt:now,updated:now,returned,missing,log:[...(x.log||[]).slice(-29),{t:now,by:S.who||'—',x:'Rendue'+(lost?' avec manquants : '+itemsTxt(missing):'')}]}));
+    if(!ok)return;
+    if(lost){const u={...S.pricing};MAT.forEach(([k,,sk])=>{if(missing[k]&&u[sk]!=null)u[sk]=Math.max(0,num(u[sk])-missing[k])});if(await guard(()=>S.db.doc('settings/pricing').set(u)))toast('Retour enregistré. Stock réduit : '+itemsTxt(missing)+'.')}
+    else toast('Retour complet enregistré.');
+  },
+  async qreserve(){
+    const q=S.q,p=byId(q.pid);if(!p||!q.date)return;
+    const items={};MAT.forEach(([k])=>{const n=num(q[k]);if(n>0)items[k]=n});
+    const c=matCheck(items,q.date,q.date,null),st=c.miss.length||c.unk.length?'demande':'option';
+    if(await addReservation({client:p.name,phone:p.phone||'',channel:p.channel||'',prospectId:p.id,start:q.date,end:q.date,note:'Depuis le devis',items,status:st}))
+      toast(st==='option'?'Matériel bloqué pour '+p.name+'.':'Stock insuffisant ou inconnu : enregistré en simple demande (onglet Matériel).',st!=='option');
+  },
+  sent(){markSent()},
+  async pricesave(){const u={...S.pricing};document.querySelectorAll('[data-price]').forEach(el=>{const v=el.value.trim();u[el.dataset.price]=v===''?null:num(v)});if(await guard(()=>S.db.doc('settings/pricing').set(u)))toast('Enregistré.')}
+};
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-act]');
+  if(!t||t.disabled)return;
+  if(t.classList.contains('q')||t.classList.contains('pc')||t.classList.contains('row')){if(e.target.closest('button')&&e.target.closest('button')!==t){const b=e.target.closest('button');if(b.dataset.act&&ACT[b.dataset.act]){ACT[b.dataset.act](b,e);return}}}
+  const f=ACT[t.dataset.act];if(f)f(t,e);
+});
+document.addEventListener('input',e=>{
+  const t=e.target;
+  if(t.dataset.filter){S.f[t.dataset.filter]=t.value;const l=$('#plist');if(l)l.innerHTML=listHTML();return}
+  if(t.dataset.q&&t.type!=='checkbox'&&t.tagName!=='SELECT'){S.q[t.dataset.q]=t.value;updateQuote()}
+  if(t.dataset.r){S.r[t.dataset.r]=t.value;updateMat()}
+  if(t.dataset.ri){S.r.items[t.dataset.ri]=t.value;updateMat()}
+});
+document.addEventListener('change',e=>{
+  const t=e.target;
+  if(t.id==='who'){S.who=t.value;try{localStorage.setItem('gbi_who',S.who)}catch(x){}if(S.view==='messages')updateMsg();return}
+  if(t.dataset.r){S.r[t.dataset.r]=t.value;updateMat();return}
+  if(t.dataset.matday){S.matDay=t.value;render();return}
+  if(t.dataset.day){S.day=t.value;S.call.pid='';S.showAll=false;render();return}
+  if(t.dataset.filter){S.f[t.dataset.filter]=t.value;const l=$('#plist');if(l)l.innerHTML=listHTML();return}
+  if(t.dataset.q){
+    const k=t.dataset.q;S.q[k]=t.type==='checkbox'?t.checked:t.value;
+    if(k==='kind'){if(S.q.kind!=='mariage'&&/^\d+$/.test(String(S.q.deco)))S.q.deco='none';render();return}
+    if(k==='pid'){const p=byId(t.value);if(p){S.q.kind=p.eventKind||'';if(p.eventDate)S.q.date=p.eventDate;if(p.guests)S.q.guests=String(p.guests)}render();return}
+    updateQuote();return}
+  if(t.dataset.m){S.m[t.dataset.m]=t.value;
+    if(t.dataset.m==='pid'){const p=byId(t.value);if(p){S.m.tpl=p.stage==='repondu'?'reply':p.stage==='contacte'?'follow':p.channel==='reco'?'network':'first';S.m.offer=p.offer||S.m.offer;render();return}}
+    updateMsg();return}
+  if(t.dataset.spend){const v=num(t.value);guard(()=>S.db.doc('spend/'+t.dataset.spend).set({amount:v}))}
+});
+document.addEventListener('focusout',()=>{setTimeout(()=>{if(S.dirty){const a=document.activeElement;if(!(a&&main.contains(a)&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)))render()}},120)});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&S.drawer)closeDrawer()});
+$('#drawer').addEventListener('click',e=>{if(e.target.id==='drawer')closeDrawer()});
+
+/* ---------- démarrage ---------- */
+async function boot(){
+  render();
+  const c=window.claude;
+  if(!c||!c.use){S.offline=true;S.loaded=true;render();return}
+  try{
+    const [db,user,dl]=await Promise.all([c.use('db'),c.use('user'),c.use('downloads')]);
+    S.downloads=dl||null;
+    if(!db){S.offline=true;S.loaded=true;render();return}
+    S.db=db;
+    if(user){try{const w=await user.can('data.write');if(w===false)S.canWrite=false}catch(e){}}
+    db.collection('prospects').limit(1000).onSnapshot(snap=>{S.prospects=snap.docs.map(d=>({id:d.id,...d.data()}));S.loaded=true;S.err='';refresh();banners()},e=>{S.err=(e&&e.code)||'inconnue';S.loaded=true;render()});
+    db.doc('settings/pricing').onSnapshot(s=>{const d=s.exists?s.data():{};S.pricing={...DEF_PRICE,...d};refresh()},()=>{});
+    db.collection('reservations').limit(1000).onSnapshot(snap=>{S.reservations=snap.docs.map(d=>({id:d.id,...d.data()}));refresh()},()=>{});
+    db.collection('spend').onSnapshot(snap=>{S.spend={};snap.docs.forEach(d=>{S.spend[d.id]=Number(d.data().amount)||0});refresh()},()=>{});
+    render();
+  }catch(e){S.err=(e&&e.code)||'inconnue';S.loaded=true;render()}
+}
+window.__gbiBoot=boot;
+})();
+</script>
+
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<script>
+/* ---------- couche Supabase : remplace window.claude (db, user, downloads) ---------- */
+(function(){
+'use strict';
+const HASH0=location.hash||'';
+const cfg=window.GBI_CONFIG||{};
+const sb=window.supabase.createClient(cfg.url,cfg.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+window.gbiSupabase=sb;
+const toErr=e=>{const m=(e&&e.message)||'';if((e&&e.code)==='42501'||/row-level security|permission denied/i.test(m))return {code:'invalid_argument',message:m};return {code:'unavailable',message:m}};
+const snapOf=rows=>({docs:(rows||[]).map(r=>({id:r.id,data:()=>r.data||{}}))});
+function watch(table,filter,load){
+  let t=null;const go=()=>{clearTimeout(t);t=setTimeout(load,250)};
+  const opts={event:'*',schema:'public',table};if(filter)opts.filter=filter;
+  sb.channel('rt-'+table+'-'+Math.random().toString(36).slice(2)).on('postgres_changes',opts,go).subscribe();
+  setInterval(load,120000);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)go()});
+}
+function newId(){const u=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():(Date.now().toString(36)+Math.random().toString(36).slice(2));return u.replace(/-/g,'').slice(0,20)}
+function collection(table){
+  const q={n:1000,limit(n){q.n=n;return q},
+    onSnapshot(cb,onErr){
+      const load=async()=>{const {data,error}=await sb.from(table).select('id,data').order('id').limit(q.n);if(error){onErr&&onErr(toErr(error));return}cb(snapOf(data))};
+      load();watch(table,null,load)},
+    async add(obj){const id=newId();const {error}=await sb.from(table).insert({id,data:obj});if(error)throw toErr(error);return {id}}};
+  return q}
+function doc(path){
+  const i=path.indexOf('/'),table=path.slice(0,i),id=path.slice(i+1);
+  const one=async()=>{const {data,error}=await sb.from(table).select('data').eq('id',id).maybeSingle();if(error)throw toErr(error);return {exists:!!data,id,data:()=>data?(data.data||{}):{}}};
+  return {id,path,get:one,
+    async set(obj){const {error}=await sb.from(table).upsert({id,data:obj});if(error)throw toErr(error)},
+    async update(patch){const {error}=await sb.rpc('fusion_doc',{t:table,doc_id:id,patch});if(error)throw toErr(error)},
+    async delete(){const {error}=await sb.from(table).delete().eq('id',id);if(error)throw toErr(error)},
+    onSnapshot(cb,onErr){const load=async()=>{try{cb(await one())}catch(e){onErr&&onErr(e)}};load();watch(table,'id=eq.'+id,load)}}}
+const downloads={async save({filename,data}){
+  const b=data instanceof Blob?data:new Blob([data],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=filename;document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500)}};
+let canWrite=true;
+const user={async can(){return canWrite}};
+window.claude={use:async n=>n==='db'?{collection,doc}:n==='user'?user:n==='downloads'?downloads:null};
+
+/* ---------- connexion ---------- */
+const $=s=>document.querySelector(s);
+const msg=(t,c)=>{const m=$('#lgmsg');m.textContent=t||'';m.className='msg '+(c||'')};
+let mode='login';
+function setMode(m){mode=m;
+  $('#lgpwdrow').hidden=m!=='login';$('#lgnewrow').hidden=m!=='newpwd';$('#lgmail').closest('label').hidden=m==='newpwd';
+  $('#lgforgot').hidden=m!=='login';
+  $('#lgbtn').textContent=m==='login'?'Se connecter':m==='forgot'?'Recevoir le lien':'Enregistrer mon mot de passe';
+  $('#lgintro').textContent=m==='login'?"Connecte-toi avec l'email de ton invitation.":m==='forgot'?'Saisis ton email : tu recevras un lien pour choisir un nouveau mot de passe.':'Choisis ton mot de passe pour les prochaines connexions.';
+  msg('')}
+async function enter(session){
+  const email=(session.user.email||'').toLowerCase();
+  const {data:mb,error}=await sb.from('membres').select('email,nom,role').limit(50);
+  const me=(mb||[]).find(x=>(x.email||'').toLowerCase()===email);
+  if(error||!me){msg("Ton compte ("+email+") n'est pas encore autorisé. Demande à Germaine de l'ajouter dans la table membres.",'bad');setMode('login');return}
+  canWrite=true;
+  try{const nom=/germaine/i.test(me.nom||'')?'Germaine':/kissima/i.test(me.nom||email)?'Kissima':'';if(nom&&!localStorage.getItem('gbi_who'))localStorage.setItem('gbi_who',nom)}catch(e){}
+  document.body.classList.add('authed');
+  if(window.__gbiBoot&&!window.__gbiStarted){window.__gbiStarted=true;window.__gbiBoot()}
+  setTimeout(()=>{const w=document.getElementById('who');let nom='';try{nom=localStorage.getItem('gbi_who')||''}catch(e){}if(w&&nom&&!w.value){w.value=nom;w.dispatchEvent(new Event('change',{bubbles:true}))}},300);
+}
+$('#lgform').addEventListener('submit',async e=>{
+  e.preventDefault();const b=$('#lgbtn');b.disabled=true;
+  try{
+    if(mode==='login'){
+      const {data,error}=await sb.auth.signInWithPassword({email:$('#lgmail').value.trim(),password:$('#lgpwd').value});
+      if(error){msg(/invalid/i.test(error.message)?'Email ou mot de passe incorrect.':error.message,'bad');return}
+      await enter(data.session);
+    }else if(mode==='forgot'){
+      const {error}=await sb.auth.resetPasswordForEmail($('#lgmail').value.trim(),{redirectTo:location.origin+location.pathname});
+      msg(error?error.message:'Lien envoyé : ouvre ton email.',error?'bad':'ok');
+    }else{
+      const p=$('#lgnew').value;if(p.length<8){msg('8 caractères minimum.','bad');return}
+      const {error}=await sb.auth.updateUser({password:p});
+      if(error){msg(error.message,'bad');return}
+      history.replaceState(null,'',location.pathname);
+      const {data}=await sb.auth.getSession();if(data.session)await enter(data.session);
+    }
+  }finally{b.disabled=false}
+});
+$('#lgforgot').addEventListener('click',()=>setMode('forgot'));
+document.addEventListener('click',async e=>{if(e.target&&e.target.id==='logout'){await sb.auth.signOut();try{localStorage.removeItem('gbi_who')}catch(x){}location.replace(location.pathname)}});
+sb.auth.onAuthStateChange(ev=>{if(ev==='PASSWORD_RECOVERY')setMode('newpwd')});
+(async()=>{
+  setMode('login');
+  if(!cfg.url||!cfg.key){msg('Configuration manquante (config.js).','bad');return}
+  const {data}=await sb.auth.getSession();
+  if(data.session&&/type=(invite|recovery|signup|magiclink)/.test(HASH0)){setMode('newpwd');return}
+  if(data.session)await enter(data.session);
+})();
+})();
+</script>
+</body></html>
