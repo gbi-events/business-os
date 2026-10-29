@@ -70,6 +70,37 @@
 #gsres .sub{display:block;font-size:12px;color:var(--muted);margin-top:2px}
 #gsres .none{padding:10px 12px;color:var(--muted);font-size:13px}
 tr.dim td{color:var(--muted)}
+
+/* aide */
+#help{position:fixed;inset:0;background:rgba(10,18,15,.55);z-index:90;display:flex;justify-content:center;align-items:flex-start;padding:24px 16px;overflow:auto}
+#help[hidden]{display:none}
+#help .hp{background:var(--bg);color:var(--ink);border-radius:14px;max-width:860px;width:100%;box-shadow:var(--shadow);border:1px solid var(--line)}
+#help .hh{position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--line);padding:14px 18px;display:flex;justify-content:space-between;align-items:center;gap:10px;border-radius:14px 14px 0 0;z-index:1}
+#help .hh h2{font-size:20px}
+#help .hb2{padding:16px 18px 22px}
+#help .hnav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+#help .hnav a{font-size:12.5px;padding:4px 10px;border:1px solid var(--line);border-radius:999px;color:var(--ink);text-decoration:none;background:var(--surface)}
+#help .hnav a:hover{border-color:var(--accent)}
+#help section.card{scroll-margin-top:70px}
+#help h3{font-size:16px}
+#help p,#help li{font-size:14px;line-height:1.5}
+#help ol,#help ul{margin:6px 0 0;padding-left:20px}
+#help li+li{margin-top:4px}
+.h3col{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.h3col div{background:var(--surface2);border-radius:10px;padding:12px}
+.h3col b{display:block;font-family:var(--f-display);font-size:16px;margin-bottom:2px}
+.h3col span{font-size:13px;color:var(--muted)}
+.hflow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0 10px}
+.hflow .arr{color:var(--muted)}
+.hstages{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;align-items:baseline;font-size:14px}
+.hg{border-top:1px solid var(--line);padding:2px 0}
+.hg summary{cursor:pointer;font-weight:600;padding:9px 0;list-style:none;display:flex;justify-content:space-between;align-items:center}
+.hg summary::-webkit-details-marker{display:none}
+.hg summary::after{content:'+';font-size:18px;color:var(--muted);font-weight:400}
+.hg[open] summary::after{content:'−'}
+.hg[open]{padding-bottom:10px}
+.hg .hs{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:10px 0 2px}
+@media (max-width:640px){.hlbl{display:none}.h3col{grid-template-columns:1fr}#help{padding:0}#help .hp{border-radius:0;min-height:100%}#help .hh{border-radius:0}}
 </style></head><body>
 <title>GBI Business OS</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&display=swap">
@@ -269,10 +300,12 @@ body.authed #login{display:none}
     <div class="who">
       <span id="sync"><i class="dot"></i> <span id="synctext">Connexion…</span></span>
       <label>Je suis <select id="who" aria-label="Qui utilise l'application"></select></label>
+      <button class="btn sm" data-act="help" type="button" aria-haspopup="dialog" aria-label="Explication de l'outil" title="Explication de l'outil">?<span class="hlbl"> Explication de l'outil</span></button>
       <button class="btn sm" id="logout" type="button">Déconnexion</button>
     </div>
   </header>
   <nav id="tabs" aria-label="Sections"></nav>
+  <div id="help" hidden role="dialog" aria-modal="true" aria-labelledby="helpt"></div>
   <div id="banners"></div>
   <main id="main"></main>
 </div>
@@ -759,6 +792,66 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Enter'){e.preventDefault();B[S.gsI||0].click()}
 });
 document.addEventListener('click',e=>{if(!e.target.closest('.gsearch')){const b=$('#gsres');if(b)b.hidden=true}});
+
+/* ---------- explication de l'outil ---------- */
+function helpHTML(){
+  const st=(k,l)=>chip(l,k==='signe'?'good':k==='qualifie'?'brass':k==='repondu'?'hot':k==='perdu'||k==='stop'?'bad':'');
+  const steps=[['a_contacter','Pas encore contacté.'],['contacte','On l\'a appelé ou on lui a écrit.'],['repondu','Il a répondu, ou il a fait lui-même une demande.'],['qualifie','Il est vraiment intéressé : prêt pour un prix.'],['devis','On lui a envoyé un prix.'],['signe','Il a dit oui.'],['perdu','Pas intéressé (on note pourquoi).'],['stop','Il ne veut plus être contacté. On ne le contacte plus jamais.']];
+  const sec=(t,b)=>`<section class="card"><h3>${t}</h3>${b}</section>`;
+  const g=(t,why,how,tips)=>`<details class="hg"><summary>${t}</summary><p>${why}</p>${how?`<p class="hs">Comment faire</p><ol>${how.map(x=>`<li>${x}</li>`).join('')}</ol>`:''}${tips?`<p class="hs">Bon à savoir</p><ul>${tips.map(x=>`<li>${x}</li>`).join('')}</ul>`:''}</details>`;
+  const guide=[
+    g('Se connecter et choisir son prénom','Chaque personne a son propre accès, donné par Germaine.',
+      ['Connecte-toi avec ton email et ton mot de passe.','En haut à droite, dans « Je suis », choisis ton prénom.'],
+      ['Tout ce que tu fais est signé de ton prénom : c\'est ce qui permet de voir qui a fait quoi dans les statistiques.','Le point vert « Base partagée » veut dire que tout est enregistré et visible en direct par les autres.']),
+    g('La fiche d\'une entreprise','Chaque entreprise a sa fiche : tout ce qu\'on sait d\'elle et tout ce qu\'on a fait avec elle.',
+      ['Clique sur le nom d\'une entreprise, où que tu sois, pour ouvrir sa fiche.','Pour changer son étape, clique sur l\'étape voulue en haut de la fiche.','Écris ce qui a été dit dans la zone de note, puis « Ajouter ».','Après une modification, clique sur « Enregistrer ».'],
+      ['Les boutons « Message » et « Devis » préparent directement un message ou un prix pour cette entreprise.','Certaines étapes demandent une information : le montant pour « Devis envoyé » et « Signé », la date de l\'événement pour « Signé », le motif pour « Perdu ».','« Opposition reçue » : si la personne ne veut plus être contactée.','Pour créer une fiche : onglet Prospects, bouton « + Prospect ». Indique toujours d\'où vient le client (le « canal »).']),
+    g('Aujourd\'hui','La page de départ : ce qu\'il faut faire maintenant.',
+      ['Regarde la liste « À faire maintenant ».','Commence par le haut : elle est déjà dans le bon ordre (réponses à traiter, clients prêts pour un prix, relances du jour, puis nouvelles entreprises).','Clique sur une ligne pour ouvrir la fiche et agir.'],
+      ['En haut : les ventes signées, les devis en cours et le taux de devis transformés en ventes.','« Leads arrivés le » : affiche seulement les entreprises trouvées un jour précis.','À droite : le matériel qui sort dans les 7 jours et les événements signés à venir.']),
+    g('Appels','Les entreprises à appeler, une par une, avec tout ce qu\'il faut sous les yeux.',
+      ['Lis le résumé et la question à poser, puis appelle le numéro affiché.','Si tu as appris quelque chose, écris-le dans la note.','Clique sur le résultat de l\'appel. L\'entreprise suivante s\'affiche toute seule.'],
+      ['<b>Intéressé</b> : la fiche passe en « Répondu », avec comme prochaine étape d\'envoyer un prix ou de fixer un rendez-vous.','<b>À rappeler</b> : choisis la date du rappel.','<b>Pas de réponse</b> : rappel prévu demain. <b>Répondeur</b> : rappel dans 2 jours.','<b>Pas intéressé</b> : choisis le motif, la fiche passe en « Perdu ».','<b>Mauvais numéro</b> : le numéro est effacé. <b>Ne plus appeler</b> : la fiche passe en « Opposition ».']),
+    g('Sans téléphone','Les entreprises dont on n\'a que l\'adresse email.',
+      ['Ouvre une fiche, puis prépare un email avec le bouton « Message ».'],
+      ['Bientôt, ces emails partiront automatiquement, toujours personnalisés.']),
+    g('Prospects','Toutes les entreprises de l\'outil.',
+      ['« Liste » : cherche, filtre par type, canal ou étape, et ouvre une fiche.','« Par étape » : les fiches rangées en colonnes, de « À contacter » à « Signé ».','« + Prospect » pour ajouter une entreprise à la main.'],
+      ['« Importer CSV » : ajouter d\'un coup une liste de contacts (par exemple les contacts d\'une publicité Facebook).','« Exporter CSV » : récupérer toutes les fiches dans un tableur.']),
+    g('Devis','Calculer un prix pour un client et l\'enregistrer sur sa fiche.',
+      ['Choisis l\'entreprise, le type d\'événement, la date et le nombre d\'invités.','Coche les prestations voulues : le prix se calcule tout seul.','Une fois le prix validé avec Germaine, coche « Prix et disponibilité validés par Germaine ».','Clique sur « Enregistrer sur la fiche » : la fiche passe en « Devis envoyé ».'],
+      ['Le calcul utilise les prix de l\'onglet Règles.','En dessous de 1 500 €, l\'outil prévient : c\'est le minimum, sauf accord de Germaine.','« Bloquer ce matériel » réserve tout de suite le matériel du devis à cette date.','« Copier le texte » pour l\'envoyer au client.']),
+    g('Matériel','Savoir ce qui est libre, louer du matériel et suivre les retours.',
+      ['Regarde le calendrier : vert = tout est libre, orange = en partie réservé (le chiffre = % encore libre), rouge = complet.','Pour une demande de location : remplis le client, les dates et les quantités. L\'outil vérifie le stock.','Fais avancer la location avec les boutons : Demande → Option (matériel bloqué) → Confirmée → Matériel sorti → Retour.','Au retour, indique les quantités rendues puis « Valider le retour ».'],
+      ['Une « Demande » ne bloque rien : seule l\'« Option » réserve le matériel.','Un manquant au retour est retiré du stock automatiquement.','Les retards apparaissent en rouge.','Le stock total se modifie tout en bas de l\'onglet.']),
+    g('Messages','Des messages tout prêts, à copier dans Gmail ou WhatsApp.',
+      ['Choisis l\'entreprise et le type de message (premier message, relance, réponse à une demande, proposer un appel, message à une connaissance, demande d\'avis après l\'événement).','Copie le texte, envoie-le depuis Gmail ou WhatsApp.','Reviens cliquer sur « Marquer comme envoyé » : la fiche est mise à jour et la relance est programmée.'],
+      ['Rien ne part tout seul depuis cet onglet.','Jamais de prix dans un message écrit.']),
+    g('Statistiques','Tous les chiffres de l\'activité, pour voir ce qui marche.',
+      ['Choisis la période : Jour, Semaine, Mois, ou des dates libres (du … au …).','Filtre si besoin par personne ou par canal.','Survole une barre pour voir le chiffre exact.'],
+      ['Chaque chiffre est comparé à la période d\'avant : ▲ en hausse, ▼ en baisse.','Plus bas : d\'où viennent les clients, l\'état des fiches, le matériel loué et les taux de réussite.','En dessous de 30 cas, un taux ne veut encore rien dire.','« Exporter en CSV » pour garder les chiffres dans un tableur.']),
+    g('Canaux','Savoir d\'où viennent les ventes et quelle source de clients garder ou arrêter.',
+      ['Chaque mois, saisis ce qui a été dépensé par canal (publicités…).','Lis le verdict de chaque ligne.'],
+      ['Verdicts possibles : <b>À pousser</b> (rapporte bien), <b>À optimiser</b>, <b>À couper ou revoir</b>, <b>Trop tôt</b> (pas encore assez de contacts pour juger).','Pour que ce soit juste, chaque fiche doit avoir le bon canal.']),
+    g('Règles','Les prix de référence utilisés par l\'onglet Devis, et la liste des personnes à ne plus contacter.',
+      ['Modifie un prix, puis « Enregistrer les tarifs ».'],null)
+  ].join('');
+  return `<div class="hp"><div class="hh"><h2 id="helpt">Comment utiliser l'outil</h2><button class="btn sm" data-act="helpclose" type="button">Fermer ✕</button></div><div class="hb2">
+  ${sec("C'est quoi ?",`<p>C'est le carnet de clients de GBI Events. On y trouve les entreprises à contacter, ce qu'on leur a dit, les prix proposés, le matériel et l'argent gagné. Tout le monde voit les mêmes informations, en direct.</p>`)}
+  ${sec('Comment ça marche',`<div class="h3col"><div><b>1. On trouve</b><span>Chaque nuit, l'outil ajoute tout seul de nouvelles entreprises à contacter.</span></div><div><b>2. On contacte</b><span>On appelle ou on écrit. Après chaque appel, on clique sur ce qui s'est passé.</span></div><div><b>3. On signe</b><span>Le client dit oui : on fait le prix, on réserve le matériel, on note le montant.</span></div></div>`)}
+  ${sec('Chaque jour',`<ol><li>En haut à droite, choisis ton prénom.</li><li>Ouvre <b>Aujourd'hui</b> et fais ce qui est en haut de la liste.</li><li>Ouvre <b>Appels</b> : appelle, puis clique sur le résultat.</li><li>Envoie les messages prévus depuis <b>Messages</b>.</li><li>En fin de semaine, regarde <b>Statistiques</b>.</li></ol>`)}
+  ${sec("Où en est un client",`<div class="hstages">${steps.map(([k,t])=>st(k,STAGE_L[k])+`<span>${t}</span>`).join('')}</div><p class="note" style="margin-top:8px">La fiche avance toute seule quand tu enregistres un appel, un message ou un devis.</p>`)}
+  ${sec('Le guide, partie par partie',`<p class="note" style="margin:0 0 8px">Clique sur une partie pour l'ouvrir.</p>${guide}`)}
+  ${sec('3 règles à retenir',`<ol><li>Ce qui n'est pas noté n'existe pas : après chaque appel, clique sur le résultat.</li><li>Jamais de prix par email ou par message écrit.</li><li>Si quelqu'un dit « ne me contactez plus », mets sa fiche en « Opposition ».</li></ol>`)}
+  ${sec('Trouver une entreprise',`<p>Tape son nom, le nom du dirigeant, la ville ou le téléphone dans la barre de recherche, tout en haut. Raccourci : la touche « / ».</p>`)}
+  ${sec('Un souci ?',`<ul><li>L'affichage semble ancien : recharge la page (Cmd + Maj + R sur Mac, Ctrl + F5 sur Windows).</li><li>Le message « Lecture seule » s'affiche : ton compte n'a pas le droit de modifier, demande à Germaine.</li></ul>`)}
+  </div></div>`;
+}
+function openHelp(){const h=$('#help');h.innerHTML=helpHTML();h.hidden=false;document.body.style.overflow='hidden';const b=h.querySelector('[data-act="helpclose"]');if(b)b.focus()}
+function closeHelp(){const h=$('#help');h.hidden=true;h.innerHTML='';document.body.style.overflow=''}
+document.addEventListener('click',e=>{const h=$('#help');if(!h||h.hidden)return;if(e.target===h){closeHelp();return}
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){const h=$('#help');if(h&&!h.hidden)closeHelp()}});
 const VIEWS={
 calls(){return callsHTML()},
 nophone(){return nophoneHTML()},
@@ -1274,6 +1367,8 @@ const ACT={
   stclear(){const s=stState();s.from='';s.to='';render()},
   matcal(t){const d=+t.dataset.d;S.matCal=d?addDays(S.matCal||today(),d):today();render()},
   gsopen(t){$('#gsres').hidden=true;$('#gsq').value='';openDrawer(t.dataset.id)},
+  help(){openHelp()},
+  helpclose(){closeHelp()},
   open(t){openDrawer(t.dataset.id)},
   newp(){openDrawer(null)},
   close(){closeDrawer()},
