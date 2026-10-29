@@ -339,6 +339,7 @@ const SCORE=[['fit','Adéquation à la cible',25],['cross','Vente croisée possi
 const DEF_PRICE={minPanier:1500,cocktail:null,classic:27,silver:35,gold:40,vin:10,vinMin:30,service:55,fumee:120,plancha:3,deco30:600,deco50:900,deco100:1200,decoMin:400,chaise:2,table:10,nappe:8,kit:2,couvert:0.5,
   stChaises:572,stTablesRect:120,stTablesRondes:8,stNappes:null,stKits:120,stCouvertsOr:120,stCouvertsArg:120};
 const PRICE_FIELDS=[['minPanier','Panier minimum par événement (€)'],['cocktail','Cocktail / mignardises (€/pers.), à fixer par Germaine'],['classic','Formule Classic (€/pers.)'],['silver','Formule Silver (€/pers.)'],['gold','Formule Gold (€/pers.)'],['vin',"Vin d'honneur (€/pers.)"],['vinMin',"Vin d'honneur : minimum d'invités"],['service','Service à table (€/pers.)'],['fumee','Option fumée (€)'],['plancha','Animation plancha (€/pers.)'],['deco30','Déco, pack 30 invités (€)'],['deco50','Déco, pack 50 invités (€)'],['deco100','Déco, pack 100 invités (€)'],['decoMin','Déco sur mesure, à partir de (€)'],['chaise','Chaise (€/unité)'],['table','Table (€/unité)'],['nappe','Nappe (€/unité)'],['kit','Kit de vaisselle (€/unité)'],['couvert','Couverts / extras (€/unité)']];
+const MAT_BASE=MAT.length;
 const STOCK_FIELDS=[['stChaises','Chaises'],['stTablesRect','Tables rectangulaires'],['stTablesRondes','Tables rondes (8 ou 23 selon le relevé)'],['stNappes','Nappes'],['stKits','Kits de vaisselle'],['stCouvertsOr','Couverts dorés'],['stCouvertsArg','Couverts argentés']];
 
 /* ---------- état ---------- */
@@ -824,7 +825,7 @@ function helpHTML(){
       ['Le calcul utilise les prix de l\'onglet Règles.','En dessous de 1 500 €, l\'outil prévient : c\'est le minimum, sauf accord de Germaine.','« Bloquer ce matériel » réserve tout de suite le matériel du devis à cette date.','« Copier le texte » pour l\'envoyer au client.']),
     g('Matériel','Savoir ce qui est libre, louer du matériel et suivre les retours.',
       ['Regarde le calendrier : vert = tout est libre, orange = en partie réservé (le chiffre = % encore libre), rouge = complet.','Pour une demande de location : remplis le client, les dates et les quantités. L\'outil vérifie le stock.','Fais avancer la location avec les boutons : Demande → Option (matériel bloqué) → Confirmée → Matériel sorti → Retour.','Au retour, indique les quantités rendues puis « Valider le retour ».'],
-      ['Une « Demande » ne bloque rien : seule l\'« Option » réserve le matériel.','Un manquant au retour est retiré du stock automatiquement.','Les retards apparaissent en rouge.','Le stock total se modifie tout en bas de l\'onglet.']),
+      ['Une « Demande » ne bloque rien : seule l\'« Option » réserve le matériel.','Un manquant au retour est retiré du stock automatiquement.','Les retards apparaissent en rouge.','Le stock total se modifie tout en bas de l\'onglet.','Nouveau matériel acheté : en bas de l\'onglet, « Ajouter un matériel » avec son nom et sa quantité. Il apparaît ensuite partout : calendrier, locations, devis et statistiques.']),
     g('Messages','Des messages tout prêts, à copier dans Gmail ou WhatsApp.',
       ['Choisis l\'entreprise et le type de message (premier message, relance, réponse à une demande, proposer un appel, message à une connaissance, demande d\'avis après l\'événement).','Copie le texte, envoie-le depuis Gmail ou WhatsApp.','Reviens cliquer sur « Marquer comme envoyé » : la fiche est mise à jour et la relance est programmée.'],
       ['Rien ne part tout seul depuis cet onglet.','Jamais de prix dans un message écrit.']),
@@ -1042,7 +1043,7 @@ function quoteHTML(){
    <label class="f"><span>Montant sur mesure (€)</span><input data-q="decoCustom" inputmode="decimal" value="${esc(q.decoCustom)}"${q.deco==='custom'?'':' disabled'}></label></div>
   <p class="note">${q.kind==='mariage'?'Mariage : les packs sont disponibles.':'Les packs sont réservés aux mariages. Hors mariage, la décoration se chiffre à la carte.'}</p>
   <div class="sec-label">Location de matériel</div>
-  <div class="fg">${n('chaises','Chaises')}${n('tablesRect','Tables rectangulaires')}${n('tablesRondes','Tables rondes')}${n('nappes','Nappes')}${n('kits','Kits de vaisselle')}${n('couvertsOr','Couverts dorés')}${n('couvertsArg','Couverts argentés')}</div></section>
+  <div class="fg">${MAT.map(([k,l])=>n(k,l)).join('')}</div></section>
   <aside><section class="card" id="qout"></section></aside></div>`;
 }
 function updateQuote(){
@@ -1203,6 +1204,23 @@ function matCalHTML(){
    <div class="calleg"><span><i style="background:var(--good-soft)"></i>100 % libre</span><span><i style="background:var(--warn-soft);color:var(--warn)">60</i>En partie réservé (le chiffre = % encore libre)</span><span><i style="background:var(--bad-soft);color:var(--bad)">✕</i>Complet</span><span><i style="background:var(--surface2);color:var(--muted)">?</i>Stock inconnu</span><span><i style="background:var(--ink);color:var(--bg);width:auto;padding:0 3px">sa</i>Week-end</span></div>
    <p class="note" style="margin-top:6px">Passe la souris (ou touche) une case pour voir le nombre exact. Compte le matériel en option, confirmé ou sorti et pas encore rendu.</p></section>`;
 }
+
+/* ---------- matériel ajouté par Germaine ---------- */
+const STOCK_BASE=STOCK_FIELDS.length;
+function syncMat(){
+  MAT.length=MAT_BASE;STOCK_FIELDS.length=STOCK_BASE;
+  (Array.isArray(S.pricing.customMat)?S.pricing.customMat:[]).forEach(m=>{if(!m||!m.k||!m.l)return;MAT.push([m.k,m.l,'st_'+m.k,'px_'+m.k]);STOCK_FIELDS.push(['st_'+m.k,m.l])});
+}
+function matUsed(k){return S.reservations.some(r=>['demande','option','confirmee','sortie'].includes(r.status)&&num((r.items||{})[k])>0)}
+function customMatHTML(){
+  const L=Array.isArray(S.pricing.customMat)?S.pricing.customMat:[];
+  const inp='background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 9px;color:var(--ink)';
+  return `<section class="card" style="margin-top:14px"><h3>Ajouter un matériel</h3><p class="note">Germaine a acheté du nouveau matériel ? Ajoute-le ici avec sa quantité : il apparaît ensuite partout (calendrier, locations, devis, statistiques).</p>
+   <div class="fg w2" style="align-items:end"><label class="f"><span>Nom du matériel</span><input id="nm_l" placeholder="Ex. : housses de chaise" style="${inp}"></label><label class="f"><span>Quantité</span><input id="nm_q" inputmode="numeric" placeholder="Ex. : 100" style="${inp}"></label>
+    <label class="f"><span>Prix de location par unité (€), facultatif</span><input id="nm_p" inputmode="decimal" placeholder="Ex. : 1,50" style="${inp}"></label><p><button class="btn primary" data-act="matadd" data-write>Ajouter ce matériel</button></p></div>
+   ${L.length?`<div class="sec-label" style="margin-top:14px">Matériel ajouté</div><div class="scroll-x"><table class="t"><thead><tr><th>Matériel</th><th class="r">Prix location (€/u)</th><th></th></tr></thead><tbody>${L.map(m=>`<tr><td><b>${esc(m.l)}</b> <span class="muted sm">(${S.pricing['st_'+m.k]==null?'?':S.pricing['st_'+m.k]} en stock)</span></td><td class="r"><input data-price="px_${esc(m.k)}" inputmode="decimal" value="${S.pricing['px_'+m.k]==null?'':S.pricing['px_'+m.k]}" placeholder="—" style="width:80px;text-align:right;${inp}"></td><td class="r"><button class="btn sm" data-act="matdel" data-k="${esc(m.k)}" data-write>Retirer</button></td></tr>`).join('')}</tbody></table></div>
+   <p class="note" style="margin-top:6px">La quantité se modifie dans « Stock total », juste au-dessus.</p><p style="margin-top:8px"><button class="btn" data-act="pricesave" data-write>Enregistrer les prix</button></p>`:''}</section>`;
+}
 function matHTML(){
   const r=S.r,t=today(),day=S.matDay||t,R=S.reservations;
   const n=(k,l)=>`<label class="f"><span>${l}</span><input data-ri="${k}" inputmode="numeric" value="${esc(r.items[k]||'')}"></label>`;
@@ -1232,7 +1250,7 @@ function matHTML(){
   <section class="card" style="margin-top:14px"><h3>Demandes et réservations à venir (${open.length})</h3>${open.length?open.map(resRow).join(''):'<p class="note">Aucune réservation en cours.</p>'}</section>
   ${done.length?`<section class="card" style="margin-top:14px"><h3>Terminées récemment</h3>${done.map(resRow).join('')}</section>`:''}
   <section class="card" style="margin-top:14px"><h3>Stock total</h3><p class="note">À tenir à jour : un manquant déclaré au retour réduit le stock automatiquement. Tables rondes : 8 ou 23 selon les relevés, à confirmer. Nappes : stock inconnu.</p><div class="fg">${STOCK_FIELDS.map(sf).join('')}</div>
-   <p style="margin-top:10px"><button class="btn primary" data-act="pricesave" data-write>Enregistrer le stock</button></p></section>`;
+   <p style="margin-top:10px"><button class="btn primary" data-act="pricesave" data-write>Enregistrer le stock</button></p></section>${customMatHTML()}`;
 }
 function updateMat(){
   const out=$('#rout');if(!out)return;const r=S.r;
@@ -1370,6 +1388,22 @@ const ACT={
   gsopen(t){$('#gsres').hidden=true;$('#gsq').value='';openDrawer(t.dataset.id)},
   help(){openHelp()},
   helpclose(){closeHelp()},
+  async matadd(){
+    const l=($('#nm_l')||{}).value.trim(),q=num(($('#nm_q')||{}).value),pv=($('#nm_p')||{}).value.trim();
+    if(!l){toast('Indique le nom du matériel.',true);return}
+    if(!(q>0)){toast('Indique une quantité supérieure à 0.',true);return}
+    const norm=x=>gsNorm?gsNorm(x):String(x).toLowerCase();
+    if(MAT.some(([,x])=>norm(x)===norm(l))){toast('Ce matériel existe déjà : modifie plutôt sa quantité.',true);return}
+    const k='m'+Date.now().toString(36),u={...S.pricing};
+    u.customMat=[...(Array.isArray(u.customMat)?u.customMat:[]),{k,l}];u['st_'+k]=q;u['px_'+k]=pv===''?null:num(pv);
+    if(await guard(()=>S.db.doc('settings/pricing').set(u)))toast('« '+l+' » ajouté : '+q+' en stock.');
+  },
+  async matdel(t){
+    const k=t.dataset.k,m=(S.pricing.customMat||[]).find(x=>x.k===k);if(!m)return;
+    if(matUsed(k)){toast('Impossible : « '+m.l+' » est dans une location en cours. Termine ou annule la location d\'abord.',true);return}
+    const u={...S.pricing};u.customMat=(u.customMat||[]).filter(x=>x.k!==k);delete u['st_'+k];delete u['px_'+k];
+    if(await guard(()=>S.db.doc('settings/pricing').set(u)))toast('« '+m.l+' » retiré.');
+  },
   open(t){openDrawer(t.dataset.id)},
   newp(){openDrawer(null)},
   close(){closeDrawer()},
@@ -1484,7 +1518,7 @@ async function boot(){
     S.db=db;
     if(user){try{const w=await user.can('data.write');if(w===false)S.canWrite=false}catch(e){}}
     db.collection('prospects').limit(1000).onSnapshot(snap=>{S.prospects=snap.docs.map(d=>({id:d.id,...d.data()}));S.loaded=true;S.err='';refresh();banners()},e=>{S.err=(e&&e.code)||'inconnue';S.loaded=true;render()});
-    db.doc('settings/pricing').onSnapshot(s=>{const d=s.exists?s.data():{};S.pricing={...DEF_PRICE,...d};refresh()},()=>{});
+    db.doc('settings/pricing').onSnapshot(s=>{const d=s.exists?s.data():{};S.pricing={...DEF_PRICE,...d};syncMat();refresh()},()=>{});
     db.collection('reservations').limit(1000).onSnapshot(snap=>{S.reservations=snap.docs.map(d=>({id:d.id,...d.data()}));refresh()},()=>{});
     db.collection('spend').onSnapshot(snap=>{S.spend={};snap.docs.forEach(d=>{S.spend[d.id]=Number(d.data().amount)||0});refresh()},()=>{});
     render();
