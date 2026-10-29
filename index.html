@@ -102,6 +102,11 @@ tr.dim td{color:var(--muted)}
 .hg[open]{padding-bottom:10px}
 .hg .hs{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:10px 0 2px}
 @media (max-width:640px){.hlbl{display:none}.h3col{grid-template-columns:1fr}#help{padding:0}#help .hp{border-radius:0;min-height:100%}#help .hh{border-radius:0}}
+
+/* réductions */
+.remrow{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-top:4px}
+.remrow .f{max-width:230px}
+.remq{display:flex;gap:6px;flex-wrap:wrap;padding-bottom:6px}
 </style></head><body>
 <title>GBI Business OS</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&display=swap">
@@ -821,11 +826,11 @@ function helpHTML(){
       ['« Liste » : cherche, filtre par type, canal ou étape, et ouvre une fiche.','« Par étape » : les fiches rangées en colonnes, de « À contacter » à « Signé ».','« + Prospect » pour ajouter une entreprise à la main.'],
       ['« Importer CSV » : ajouter d\'un coup une liste de contacts (par exemple les contacts d\'une publicité Facebook).','« Exporter CSV » : récupérer toutes les fiches dans un tableur.']),
     g('Devis','Calculer un prix pour un client et l\'enregistrer sur sa fiche.',
-      ['Choisis l\'entreprise, le type d\'événement, la date et le nombre d\'invités.','Coche les prestations voulues : le prix se calcule tout seul.','Une fois le prix validé avec Germaine, coche « Prix et disponibilité validés par Germaine ».','Clique sur « Enregistrer sur la fiche » : la fiche passe en « Devis envoyé ».'],
-      ['Le calcul utilise les prix de l\'onglet Règles.','En dessous de 1 500 €, l\'outil prévient : c\'est le minimum, sauf accord de Germaine.','« Bloquer ce matériel » réserve tout de suite le matériel du devis à cette date.','« Copier le texte » pour l\'envoyer au client.']),
+      ['Choisis l\'entreprise, le type d\'événement, la date et le nombre d\'invités.','Coche les prestations voulues : le prix se calcule tout seul.','Si besoin, ajoute une réduction (5 %, 10 %, 15 %, 20 % ou un autre chiffre) : le total se recalcule tout seul.','Une fois le prix validé avec Germaine, coche « Prix et disponibilité validés par Germaine ».','Clique sur « Enregistrer sur la fiche » : la fiche passe en « Devis envoyé ».'],
+      ['Le calcul utilise les prix de l\'onglet Règles.','En dessous de 1 500 €, l\'outil prévient : c\'est le minimum, sauf accord de Germaine.','Une réduction de plus de 30 % affiche une alerte : à valider avec Germaine.','« Bloquer ce matériel » réserve tout de suite le matériel du devis à cette date.','« Copier le texte » pour l\'envoyer au client.']),
     g('Matériel','Savoir ce qui est libre, louer du matériel et suivre les retours.',
       ['Regarde le calendrier : vert = tout est libre, orange = en partie réservé (le chiffre = % encore libre), rouge = complet.','Pour une demande de location : remplis le client, les dates et les quantités. L\'outil vérifie le stock.','Fais avancer la location avec les boutons : Demande → Option (matériel bloqué) → Confirmée → Matériel sorti → Retour.','Au retour, indique les quantités rendues puis « Valider le retour ».'],
-      ['Une « Demande » ne bloque rien : seule l\'« Option » réserve le matériel.','Un manquant au retour est retiré du stock automatiquement.','Les retards apparaissent en rouge.','Le stock total se modifie tout en bas de l\'onglet.','Nouveau matériel acheté : en bas de l\'onglet, « Ajouter un matériel » avec son nom et sa quantité. Il apparaît ensuite partout : calendrier, locations, devis et statistiques.']),
+      ['Une « Demande » ne bloque rien : seule l\'« Option » réserve le matériel.','Pour une grosse quantité, tu peux ajouter une réduction en % sur la location : le prix se recalcule tout seul.','Un manquant au retour est retiré du stock automatiquement.','Les retards apparaissent en rouge.','Le stock total se modifie tout en bas de l\'onglet.','Nouveau matériel acheté : en bas de l\'onglet, « Ajouter un matériel » avec son nom et sa quantité. Il apparaît ensuite partout : calendrier, locations, devis et statistiques.']),
     g('Messages','Des messages tout prêts, à copier dans Gmail ou WhatsApp.',
       ['Choisis l\'entreprise et le type de message (premier message, relance, réponse à une demande, proposer un appel, message à une connaissance, demande d\'avis après l\'événement).','Copie le texte, envoie-le depuis Gmail ou WhatsApp.','Reviens cliquer sur « Marquer comme envoyé » : la fiche est mise à jour et la relance est programmée.'],
       ['Rien ne part tout seul depuis cet onglet.','Jamais de prix dans un message écrit.']),
@@ -847,6 +852,7 @@ function helpHTML(){
   ${sec('3 règles à retenir',`<ol><li>Ce qui n'est pas noté n'existe pas : après chaque appel, clique sur le résultat.</li><li>Jamais de prix par email ou par message écrit.</li><li>Si quelqu'un dit « ne me contactez plus », mets sa fiche en « Opposition ».</li></ol>`)}
   ${sec('Trouver une entreprise',`<p>Tape son nom, le nom du dirigeant, la ville ou le téléphone dans la barre de recherche, tout en haut. Raccourci : la touche « / ».</p>`)}
   ${sec('Un souci ?',`<ul><li>L'affichage semble ancien : recharge la page (Cmd + Maj + R sur Mac, Ctrl + F5 sur Windows).</li><li>Le message « Lecture seule » s'affiche : ton compte n'a pas le droit de modifier, demande à Germaine.</li></ul>`)}
+  <p class="note" style="text-align:center;margin-top:12px">Explication mise à jour le 29/10/2026.</p>
   </div></div>`;
 }
 function openHelp(){const h=$('#help');h.innerHTML=helpHTML();h.hidden=false;document.body.style.overflow='hidden';const b=h.querySelector('[data-act="helpclose"]');if(b)b.focus()}
@@ -1008,7 +1014,8 @@ function calcQuote(q){
       else if(n>a.free)W.push(['bad',l+' : '+n+' demandé(s), '+Math.max(0,a.free)+' disponible(s) le '+fdateFull(q.date)+' (stock '+a.stock+', déjà réservé '+a.used+').'])}
     else{const st=pr[sk];if(st!=null&&n>st)W.push(['bad',l+' : '+n+' demandé(s) pour un stock total de '+st+'.'])}});
   if(hasLoc)W.push(['','Livraison de la location : non chiffrée ici. À définir avec Germaine (retrait possible par le client).']);
-  const total=sum(L,x=>x.total),mp=num(pr.minPanier);
+  const subtotal=sum(L,x=>x.total),remise=Math.min(90,Math.max(0,num(q.remise))),remiseAmt=Math.round(subtotal*remise)/100,total=Math.round((subtotal-remiseAmt)*100)/100,mp=num(pr.minPanier);
+  if(remise>30)W.push(['bad','Réduction de '+remise+' % : élevée, à valider avec Germaine.']);
   if(ev&&mp&&total>0&&total<mp)W.push(['bad','Total '+fmt(total)+' : sous le panier minimum de '+fmt(mp)+'. Ajoute décoration, matériel ou service pour passer en clé en main, ou décline poliment.']);
   else if(!ev&&hasLoc)W.push(['','Location seule : non soumise au panier minimum événement (règle à confirmer avec Germaine).']);
   if(q.date){
@@ -1019,11 +1026,11 @@ function calcQuote(q){
       else W.push(['ok','Aucun événement signé ce week-end dans la base. Disponibilité à confirmer avec Germaine.'])}
     else W.push(['','Date en semaine : capacité non confirmée, à vérifier avec Germaine.']);
   }else W.push(['','Sans date, la disponibilité ne peut pas être vérifiée.']);
-  return {L,W,total,hasLoc};
+  return {L,W,total,subtotal,remise,remiseAmt,hasLoc};
 }
 function quoteText(q,r,p){
   const lines=r.L.map(x=>'- '+x.label+(x.qty>1?' ('+x.qty+' × '+fmt(x.unit)+')':'')+' : '+fmt(x.total));
-  return `Estimation indicative${p?' pour '+p.name:''}${q.date?' — événement du '+fdateFull(q.date):''}${num(q.guests)?' — '+num(q.guests)+' invités':''}\n\n${lines.join('\n')||'(aucune ligne)'}\n\nTotal estimé : ${fmt(r.total)}\n\nCette estimation repose sur nos tarifs de référence. GBI Events s'occupe de votre événement de A à Z, avec un seul interlocuteur. Elle reste soumise à la vérification de la disponibilité et du matériel, puis à la confirmation de GBI Events.`;
+  return `Estimation indicative${p?' pour '+p.name:''}${q.date?' — événement du '+fdateFull(q.date):''}${num(q.guests)?' — '+num(q.guests)+' invités':''}\n\n${lines.join('\n')||'(aucune ligne)'}\n\n${r.remise>0?'Sous-total : '+fmt(r.subtotal)+'\nRéduction de '+r.remise+' % : − '+fmt(r.remiseAmt)+'\n':''}Total estimé : ${fmt(r.total)}\n\nCette estimation repose sur nos tarifs de référence. GBI Events s'occupe de votre événement de A à Z, avec un seul interlocuteur. Elle reste soumise à la vérification de la disponibilité et du matériel, puis à la confirmation de GBI Events.`;
 }
 function quoteHTML(){
   const q=S.q,P=S.prospects.filter(p=>!['perdu','stop','signe'].includes(p.stage)).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
@@ -1043,7 +1050,9 @@ function quoteHTML(){
    <label class="f"><span>Montant sur mesure (€)</span><input data-q="decoCustom" inputmode="decimal" value="${esc(q.decoCustom)}"${q.deco==='custom'?'':' disabled'}></label></div>
   <p class="note">${q.kind==='mariage'?'Mariage : les packs sont disponibles.':'Les packs sont réservés aux mariages. Hors mariage, la décoration se chiffre à la carte.'}</p>
   <div class="sec-label">Location de matériel</div>
-  <div class="fg">${MAT.map(([k,l])=>n(k,l)).join('')}</div></section>
+  <div class="fg">${MAT.map(([k,l])=>n(k,l)).join('')}</div>
+  <div class="sec-label">Réduction (facultatif)</div><div class="remrow"><label class="f"><span>Réduction sur le prix final (%)</span><input data-q="remise" inputmode="decimal" value="${esc(q.remise||'')}" placeholder="0"></label><span class="remq">${[5,10,15,20].map(v=>`<button type="button" class="btn sm${num(q.remise)===v?' primary':''}" data-act="qremise" data-v="${v}">${v} %</button>`).join('')}<button type="button" class="btn sm" data-act="qremise" data-v="0">Aucune</button></span></div>
+  <p class="note">Par exemple pour une grosse quantité. La réduction s'applique au prix final et se calcule toute seule.</p></section>
   <aside><section class="card" id="qout"></section></aside></div>`;
 }
 function updateQuote(){
@@ -1051,7 +1060,7 @@ function updateQuote(){
   const dec=document.querySelector('[data-q="decoCustom"]');if(dec)dec.disabled=q.deco!=='custom';
   const txt=quoteText(q,r,p);
   out.innerHTML=`<h3>Estimation</h3>${r.L.length?`<div class="scroll-x"><table class="t"><thead><tr><th>Ligne</th><th class="r">Qté</th><th class="r">PU</th><th class="r">Total</th></tr></thead><tbody>${r.L.map(x=>`<tr><td>${esc(x.label)}</td><td class="r">${x.qty}</td><td class="r">${fmt(x.unit)}</td><td class="r">${fmt(x.total)}</td></tr>`).join('')}</tbody></table></div>`:'<p class="note">Ajoute des prestations à gauche.</p>'}
-   <div class="total"><span>Total estimé</span><b>${fmt(r.total)}</b></div>
+   ${r.remise>0?`<div class="ev"><span>Sous-total</span><span>${fmt(r.subtotal)}</span></div><div class="ev"><span>Réduction ${r.remise} %</span><span style="color:var(--good)">− ${fmt(r.remiseAmt)}</span></div>`:''}<div class="total"><span>${r.remise>0?'Total après réduction':'Total estimé'}</span><b>${fmt(r.total)}</b></div>
    <div class="warns">${r.W.map(([c,t])=>`<div class="${c}">${esc(t)}</div>`).join('')}</div>
    <label class="f"><span>Texte du devis (modifiable)</span><textarea class="draft" id="qtext">${esc(txt)}</textarea></label>
    <label class="ck" style="margin:8px 0"><input type="checkbox" data-q="validated"${q.validated?' checked':''}> Prix et disponibilité validés par Germaine</label>
@@ -1061,7 +1070,7 @@ function updateQuote(){
 async function saveQuote(){
   const q=S.q,p=byId(q.pid);if(!p){toast('Choisis un prospect.',true);return}
   const r=calcQuote(q);if(r.total<=0){toast('Le devis est vide.',true);return}
-  const patch={eventKind:q.kind||p.eventKind||'',quoteAmount:Math.round(r.total*100)/100,quoteText:($('#qtext')||{}).value||'',eventDate:q.date||p.eventDate||'',guests:num(q.guests)||p.guests||''};
+  const patch={eventKind:q.kind||p.eventKind||'',quoteAmount:Math.round(r.total*100)/100,quoteText:($('#qtext')||{}).value||'',eventDate:q.date||p.eventDate||'',guests:num(q.guests)||p.guests||'',quoteRemise:r.remise||0,quoteSubtotal:r.subtotal};
   if(q.validated&&['a_contacter','contacte','repondu','qualifie','devis'].includes(p.stage)){
     patch.nextAction='Relancer le devis';patch.nextDate=addDays(today(),3);
     if(p.stage==='devis'){patch.log=logAdd(p,'Devis mis à jour : '+fmt(patch.quoteAmount));if(await guard(()=>save(p.id,patch)))toast('Devis enregistré.')}
@@ -1238,6 +1247,7 @@ function matHTML(){
     <label class="f"><span>Canal</span><select data-r="channel">${CHANNELS.map(([k,l])=>`<option value="${k}"${r.channel===k?' selected':''}>${l}</option>`).join('')}</select></label>
     <label class="f"><span>Date de retrait (ou livraison)</span><input data-r="start" type="date" value="${esc(r.start)}"></label><label class="f"><span>Date de retour</span><input data-r="end" type="date" value="${esc(r.end)}"></label></div>
    <div class="sec-label">Quantités</div><div class="fg">${MAT.map(([k,l])=>n(k,l)).join('')}</div>
+   <div class="remrow"><label class="f"><span>Réduction sur la location (%)</span><input data-r="remise" inputmode="decimal" value="${esc(r.remise||'')}" placeholder="0"></label><span class="remq">${[5,10,15,20].map(v=>`<button type="button" class="btn sm${num(r.remise)===v?' primary':''}" data-act="rremise" data-v="${v}">${v} %</button>`).join('')}<button type="button" class="btn sm" data-act="rremise" data-v="0">Aucune</button></span></div>
    <label class="f" style="margin-top:8px"><span>Note (adresse, livraison, caution…)</span><input data-r="note" value="${esc(r.note)}"></label>
    <div id="rout" style="margin-top:10px"></div></section>
   <aside><section class="card"><h3>Disponibilité sur une période</h3>
@@ -1262,7 +1272,7 @@ function updateMat(){
     :c.unk.length?`<div>Stock inconnu pour ${c.unk.map(x=>x.l.toLowerCase()).join(', ')} : vérifie à la main avant de confirmer.</div>`
     :`<div class="ok">Tout est disponible sur la période.</div>`;
   out.innerHTML=`<div class="scroll-x"><table class="t"><thead><tr><th>Matériel</th><th class="r">Demandé</th><th class="r">Libre</th><th class="r">Prix</th></tr></thead><tbody>${c.L.map(x=>`<tr><td>${esc(x.l)}</td><td class="r">${x.n}</td><td class="r" style="color:${x.a&&!x.ok?'var(--bad)':'inherit'}">${x.a?Math.max(0,x.a.free):'?'}</td><td class="r">${fmt(x.price)}</td></tr>`).join('')}</tbody></table></div>
-   <div class="total"><span>Location (indicatif, hors livraison)</span><b>${fmt(sum(c.L,x=>x.price))}</b></div>
+   ${(()=>{const st=sum(c.L,x=>x.price),pc=Math.min(90,Math.max(0,num(r.remise))),ra=Math.round(st*pc)/100;return (pc>0?`<div class="ev"><span>Sous-total</span><span>${fmt(st)}</span></div><div class="ev"><span>Réduction ${pc} %</span><span style="color:var(--good)">− ${fmt(ra)}</span></div>`:'')+`<div class="total"><span>Location (indicatif, hors livraison)${pc>0?', après réduction':''}</span><b>${fmt(st-ra)}</b></div>`})()}
    <div class="warns">${v}</div>
    <p style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="rsave" data-st="demande" data-write>Enregistrer la demande</button><button class="btn primary" data-act="rsave" data-st="option" data-write${c.miss.length||c.unk.length?' disabled':''}>Bloquer le matériel (option)</button></p>`;
 }
@@ -1404,6 +1414,8 @@ const ACT={
     const u={...S.pricing};u.customMat=(u.customMat||[]).filter(x=>x.k!==k);delete u['st_'+k];delete u['px_'+k];
     if(await guard(()=>S.db.doc('settings/pricing').set(u)))toast('« '+m.l+' » retiré.');
   },
+  qremise(t){S.q.remise=t.dataset.v==='0'?'':t.dataset.v;render()},
+  rremise(t){S.r.remise=t.dataset.v==='0'?'':t.dataset.v;render()},
   open(t){openDrawer(t.dataset.id)},
   newp(){openDrawer(null)},
   close(){closeDrawer()},
@@ -1440,8 +1452,8 @@ const ACT={
     const items={};MAT.forEach(([k])=>{const n=num(r.items[k]);if(n>0)items[k]=n});
     if(!Object.keys(items).length){toast('Ajoute au moins une quantité.',true);return}
     if(st==='option'){const c=matCheck(items,r.start,r.end||r.start,null);if(c.miss.length||c.unk.length){toast('Stock insuffisant ou inconnu : impossible de bloquer.',true);return}}
-    if(await addReservation({client:r.client.trim(),phone:r.phone.trim(),channel:r.channel,start:r.start,end:r.end||r.start,note:r.note.trim(),items,status:st})){
-      toast(st==='option'?'Matériel bloqué.':'Demande enregistrée (rien n\'est bloqué).');S.r={client:'',phone:'',channel:r.channel,start:'',end:'',note:'',items:{}};render()}
+    if(await addReservation({client:r.client.trim(),phone:r.phone.trim(),channel:r.channel,start:r.start,end:r.end||r.start,note:r.note.trim(),items,status:st,remise:Math.min(90,Math.max(0,num(r.remise)))||0})){
+      toast(st==='option'?'Matériel bloqué.':'Demande enregistrée (rien n\'est bloqué).');S.r={client:'',phone:'',channel:r.channel,start:'',end:'',note:'',items:{},remise:''};render()}
   },
   async rstatus(t){
     const x=S.reservations.find(y=>y.id===t.dataset.id),st=t.dataset.st;if(!x)return;

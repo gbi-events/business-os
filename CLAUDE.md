@@ -9,6 +9,16 @@ Ce dépôt est modifié par le Claude de Germaine (propriétaire de GBI Events) 
 - Ne mets jamais la clé `service_role`, un mot de passe ou une clé privée dans ce dépôt public.
 - Après une modification, vérifie que la page se charge, que la connexion fonctionne et que les fiches s'affichent.
 
+## Règle obligatoire : mettre à jour « Explication de l'outil »
+- **À chaque modification du site, quelle qu'en soit l'origine (Germaine, Kissima ou leur Claude), mets à jour dans le même envoi la fenêtre « Explication de l'outil »** : fonction `helpHTML()` dans `index.html` (bouton en haut à droite).
+- Elle doit toujours décrire l'outil tel qu'il est : nouvel onglet, nouveau bouton, champ modifié ou supprimé.
+- Style : phrases courtes, mots de tous les jours, pas de jargon technique. Chaque partie suit le même modèle : à quoi ça sert, comment faire (étapes numérotées), bon à savoir.
+- Une modification sans mise à jour de l'explication est incomplète.
+
+## Matériel et réductions
+- La liste du matériel est extensible : les matériels ajoutés depuis l'onglet Matériel sont enregistrés dans `settings/pricing` (`customMat`, stock `st_<clé>`, prix `px_<clé>`) et apparaissent partout via `MAT`.
+- Devis et locations acceptent une réduction en % sur le prix final (champ `remise`). Le montant enregistré sur la fiche (`quoteAmount`) est le total après réduction ; `quoteRemise` et `quoteSubtotal` gardent le détail.
+
 ## Onglet Statistiques
 - Il lit les dates des fiches (`created`, `repliedAt`, `quoteDate`, `signedDate`) et leur journal `log`.
 - Lignes de journal comptées : `Appel : <résultat>` (onglet Appels), `Message envoyé : …` (onglet Messages), `Email envoyé : …` (envois automatiques).
