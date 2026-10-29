@@ -1,7 +1,8 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
 /* statistiques */
 .stbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
-.stbar select{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+.stbar select,.stbar input[type=date]{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 8px;color:var(--ink)}
+.stdates{display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap}
 .stseg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
 .stseg button{border:0;background:var(--surface);padding:7px 14px;font-weight:500;color:var(--ink)}
 .stseg button+button{border-left:1px solid var(--line)}
@@ -23,6 +24,41 @@
 #sttip{position:fixed;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12px;padding:6px 9px;border-radius:6px;z-index:80;white-space:nowrap;box-shadow:var(--shadow)}
 .delta{font-weight:600}.delta.up{color:var(--good)}.delta.down{color:var(--bad)}
 @media (max-width:820px){.stkpis{grid-template-columns:repeat(2,minmax(0,1fr))}.stgrid{grid-template-columns:1fr}}
+
+/* matériel : disponibilité */
+.mbar{display:inline-block;width:64px;height:8px;border-radius:4px;background:var(--surface2);vertical-align:middle;overflow:hidden;margin-right:6px}
+.mbar i{display:block;height:100%;background:var(--good);border-radius:4px}
+.mbar i.part{background:var(--warn)}.mbar i.full{background:var(--bad)}
+.mrange{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.mrange input{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:4px 6px;color:var(--ink)}
+.cal{border-collapse:separate;border-spacing:3px;font-size:11px}
+.cal th{font-weight:500;color:var(--muted);text-align:center;padding:0 0 2px;min-width:26px;line-height:1.15}
+.cal th.we{color:var(--ink);font-weight:700}
+.cal th.it{text-align:left}
+.cal td.it{white-space:nowrap;padding-right:10px;font-size:12.5px;position:sticky;left:0;background:var(--surface);z-index:1}
+.cal td.c{height:28px;min-width:26px;border-radius:6px;text-align:center;font-size:10px;font-weight:700;font-variant-numeric:tabular-nums}
+.cal td.ok{background:var(--good-soft);color:var(--good)}
+.cal td.part{background:var(--warn-soft);color:var(--warn)}
+.cal td.full{background:var(--bad-soft);color:var(--bad)}
+.cal td.unk{background:var(--surface2);color:var(--muted)}
+.cal th.we span{display:inline-block;background:var(--ink);color:var(--bg);border-radius:5px;padding:1px 3px}
+.calleg{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:8px}
+.calleg span{display:inline-flex;align-items:center;gap:5px}
+.calleg i{display:inline-block;width:14px;height:14px;border-radius:4px;font-style:normal;font-size:9px;font-weight:700;text-align:center;line-height:14px}
+
+/* recherche globale */
+.gsearch{position:relative;flex:1 1 280px;max-width:440px}
+.gsearch input{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 12px 9px 34px;color:var(--ink);font-size:14px}
+.gsearch input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+.gsearch .ico{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;font-size:14px}
+#gsres{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);z-index:70;max-height:70vh;overflow:auto}
+#gsres button{display:block;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:9px 12px;color:var(--ink)}
+#gsres button:last-child{border-bottom:0}
+#gsres button:hover,#gsres button.on{background:var(--accent-soft)}
+#gsres b{font-weight:600}
+#gsres .sub{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+#gsres .none{padding:10px 12px;color:var(--muted);font-size:13px}
+tr.dim td{color:var(--muted)}
 </style></head><body>
 <title>GBI Business OS</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&display=swap">
@@ -218,6 +254,7 @@ body.authed #login{display:none}
 <div id="app" class="wrap">
   <header class="top">
     <div class="brand"><h1>GBI Business OS</h1><span>Ventes d'abord</span></div>
+    <div class="gsearch" role="search"><span class="ico" aria-hidden="true">⌕</span><input id="gsq" type="search" autocomplete="off" placeholder="Chercher un nom, une société, un téléphone…" aria-label="Chercher une fiche" aria-controls="gsres"><div id="gsres" hidden></div></div>
     <div class="who">
       <span id="sync"><i class="dot"></i> <span id="synctext">Connexion…</span></span>
       <label>Je suis <select id="who" aria-label="Qui utilise l'application"></select></label>
@@ -511,7 +548,7 @@ const ST_SERIES=[
   ['sign','Événements signés','Fiches passées à « Signé ».'],
   ['ca','Chiffre d\'affaires signé','Montant signé, à la date de signature.',1]
 ];
-function stState(){if(!S.st){let g='semaine';try{g=localStorage.getItem('gbi_stg')||g}catch(e){}S.st={g:ST_GRAN.some(x=>x[0]===g)?g:'semaine',who:'',chan:''}}return S.st}
+function stState(){if(!S.st){let g='semaine';try{g=localStorage.getItem('gbi_stg')||g}catch(e){}S.st={g:ST_GRAN.some(x=>x[0]===g)?g:'semaine',who:'',chan:'',from:'',to:''}}return S.st}
 function stKey(iso,g){
   if(!iso)return null;const s=String(iso);
   const d=s.length>10?new Date(s):new Date(s.slice(0,10)+'T12:00:00');if(isNaN(d))return null;
@@ -546,6 +583,16 @@ function stEvents(){
   });
   return E;
 }
+function stRange(){const st=stState();return st.from&&st.to&&st.from<=st.to?{from:st.from,to:st.to}:null}
+function stKeysBetween(from,to,g){
+  const out=[],end=stKey(to,g);let k=stKey(from,g),n=0;
+  while(k&&k<=end&&n++<400){out.push(k);let d;
+    if(g==='mois'){const [y,m]=k.split('-');d=new Date(+y,+m,1,12)}else{d=new Date(k+'T12:00:00');d.setDate(d.getDate()+(g==='jour'?1:7))}
+    k=stKey(toISO(d),g)}
+  return out;
+}
+function stTotals(E){const o={call:0,joint:0,int:0,msg:0,lead:0,reply:0,quote:0,quoteV:0,sign:0,ca:0,cash:0};
+  E.forEach(e=>{if(e.k==='ca'||e.k==='cash')o[e.k]+=e.v||0;else{o[e.k]++;if(e.k==='quote')o.quoteV+=e.v||0}});return o}
 function stAgg(E,keys,g){
   const idx=Object.fromEntries(keys.map((k,i)=>[k,i])),A={};
   ['call','joint','int','msg','lead','reply','quote','quoteV','sign','ca','cash'].forEach(k=>A[k]=keys.map(()=>0));
@@ -563,8 +610,18 @@ function stDelta(cur,prev,money){
 function stRate(a,b){if(!b)return '—';return Math.round(100*a/b)+' %'}
 function statsHTML(){
   const st=stState(),g=st.g,G=ST_GRAN.find(x=>x[0]===g);
-  const keys=stBuckets(g,0),prevKeys=stBuckets(g,keys.length),E=stEvents();
-  const A=stAgg(E,keys,g),P=stAgg(E,prevKeys,g),T=k=>stTot(A[k]),PT=k=>stTot(P[k]);
+  const E=stEvents(),R=stRange();let keys,A,PT,info=G[2];
+  if(R){
+    keys=stKeysBetween(R.from,R.to,g);
+    const day=e=>stKey(e.t,'jour'),len=Math.round((new Date(R.to+'T12:00:00')-new Date(R.from+'T12:00:00'))/864e5)+1;
+    const pFrom=addDays(R.from,-len),pTo=addDays(R.from,-1);
+    A=stAgg(E.filter(e=>{const d=day(e);return d&&d>=R.from&&d<=R.to}),keys,g);
+    const PTOT=stTotals(E.filter(e=>{const d=day(e);return d&&d>=pFrom&&d<=pTo}));PT=k=>PTOT[k];
+    info=`Du ${fdateFull(R.from)} au ${fdateFull(R.to)} (${len} jour${len>1?'s':''}), comparé aux ${len} jour${len>1?'s':''} d'avant`;
+  }else{
+    keys=stBuckets(g,0);A=stAgg(E,keys,g);const P=stAgg(E,stBuckets(g,keys.length),g);PT=k=>stTot(P[k]);
+  }
+  const T=k=>stTot(A[k]);
   S.stData={keys,A,g};
   const tile=(label,k,money,sub)=>`<div class="kpi"><span class="kl">${label}</span><b>${money?fmt(T(k)):stInt(T(k))}</b><span class="ks">${sub||stDelta(T(k),PT(k),money)}</span></div>`;
   const kp=`<section class="stkpis" aria-label="Totaux de la période">
@@ -580,7 +637,8 @@ function statsHTML(){
   const bar=`<div class="stbar"><div class="stseg" role="group" aria-label="Regrouper par">${ST_GRAN.map(([k,l])=>`<button data-act="stg" data-g="${k}" aria-pressed="${g===k}">${l}</button>`).join('')}</div>
     <select data-stf="who" aria-label="Personne"><option value="">Tout le monde</option>${opts([['Kissima','Kissima'],['Germaine','Germaine']],st.who)}</select>
     <select data-stf="chan" aria-label="Canal"><option value="">Tous les canaux</option>${opts(CHANNELS,st.chan)}</select>
-    <span class="muted sm">${G[2]}</span></div>`;
+    <span class="stdates"><span class="muted sm">Dates libres : du</span><input type="date" data-stf="from" value="${esc(st.from||'')}" aria-label="Date de début"><span class="muted sm">au</span><input type="date" data-stf="to" value="${esc(st.to||'')}" aria-label="Date de fin">${st.from||st.to?'<button class="btn sm" data-act="stclear">Effacer les dates</button>':''}</span>
+    <span class="muted sm" style="flex-basis:100%">${info}${(st.from||st.to)&&!R?' · <b>Indique les deux dates (début avant fin) pour appliquer la période.</b>':''}${R&&keys.length>=400?' · Période tronquée à 400 '+G[1].toLowerCase()+'s : choisis Semaine ou Mois.':''}</span></div>`;
   const charts=`<div class="stgrid">${ST_SERIES.map(([k,l,h,m])=>`<section class="card"><h3 style="margin-bottom:2px">${l}</h3><p class="note" style="margin:0 0 6px">${h}</p><div class="chartbox${m?' money':''}" data-k="${k}" data-label="${esc(l)}"></div></section>`).join('')}</div>`;
   const nInt=T('int'),nJ=T('joint'),nS=T('sign');
   const warn=n=>n<30?` <span class="muted">(${n} : échantillon faible)</span>`:'';
@@ -633,12 +691,39 @@ async function stCSV(){
   let tip=null;const hide=()=>{if(tip)tip.hidden=true};
   const show=(el,e)=>{if(!tip){tip=document.createElement('div');tip.id='sttip';tip.setAttribute('role','status');document.body.appendChild(tip)}
     tip.textContent=el.dataset.tip;tip.hidden=false;const w=tip.offsetWidth;let x=e.clientX+12;if(x+w>innerWidth-8)x=e.clientX-w-12;tip.style.left=Math.max(8,x)+'px';tip.style.top=(e.clientY-36)+'px'};
-  document.addEventListener('mousemove',e=>{const el=e.target.closest&&e.target.closest('.chartbox [data-tip]');if(el)show(el,e);else hide()});
-  document.addEventListener('click',e=>{const el=e.target.closest&&e.target.closest('.chartbox [data-tip]');if(el)show(el,e)});
+  document.addEventListener('mousemove',e=>{const el=e.target.closest&&e.target.closest('.chartbox [data-tip],.cal [data-tip]');if(el)show(el,e);else hide()});
+  document.addEventListener('click',e=>{const el=e.target.closest&&e.target.closest('.chartbox [data-tip],.cal [data-tip]');if(el)show(el,e)});
   document.addEventListener('scroll',hide,true);
   let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{if(S.view==='stats')stDraw()},150)});
 })();
 
+
+/* ---------- recherche globale ---------- */
+const gsNorm=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+function gsText(p){let ph=String(p.phone||'').replace(/\D/g,'');if(/^33\d{9}$/.test(ph))ph='0'+ph.slice(2);return gsNorm([p.name,dirigeantOf(p),p.city,p.email,p.website,p.instagram,(p.brief||[]).join(' ')].join(' '))+' '+ph}
+function gsSearch(q){
+  const words=gsNorm(q).split(/\s+/).filter(Boolean);if(!words.length)return [];
+  return S.prospects.map(p=>{const t=gsText(p),n=gsNorm(p.name);
+      if(!words.every(w=>t.includes(w)))return null;
+      return {p,s:(n.startsWith(words[0])?3:0)+(n.includes(words[0])?2:0)}}).filter(Boolean)
+    .sort((a,b)=>b.s-a.s||String(a.p.name).localeCompare(String(b.p.name))).slice(0,8).map(x=>x.p);
+}
+function gsRender(){
+  const q=$('#gsq').value,box=$('#gsres');if(!q.trim()){box.hidden=true;box.innerHTML='';return}
+  const L=gsSearch(q);S.gsI=0;
+  box.innerHTML=L.length?L.map((p,i)=>{const d=dirigeantOf(p);return `<button type="button" data-act="gsopen" data-id="${esc(p.id)}"${i===0?' class="on"':''}><b>${esc(p.name)}</b><span class="sub">${[d,p.city,STAGE_L[p.stage],hasPhone(p)?fmtPhone(p.phone):'',p.email].filter(Boolean).map(esc).join(' · ')}</span></button>`}).join(''):`<div class="none">Aucune fiche ne correspond à « ${esc(q)} ».</div>`;
+  box.hidden=false;
+}
+document.addEventListener('input',e=>{if(e.target.id==='gsq')gsRender()});
+document.addEventListener('keydown',e=>{
+  if(e.key==='/'&&!/INPUT|TEXTAREA|SELECT/.test((document.activeElement||{}).tagName||'')&&$('#gsq')){e.preventDefault();$('#gsq').focus();return}
+  if(e.target.id!=='gsq')return;const B=[...document.querySelectorAll('#gsres button')];
+  if(e.key==='Escape'){e.target.value='';gsRender();return}
+  if(!B.length)return;
+  if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();S.gsI=(S.gsI+(e.key==='ArrowDown'?1:B.length-1))%B.length;B.forEach((b,i)=>b.classList.toggle('on',i===S.gsI))}
+  if(e.key==='Enter'){e.preventDefault();B[S.gsI||0].click()}
+});
+document.addEventListener('click',e=>{if(!e.target.closest('.gsearch')){const b=$('#gsres');if(b)b.hidden=true}});
 const VIEWS={
 calls(){return callsHTML()},
 nophone(){return nophoneHTML()},
@@ -670,7 +755,7 @@ pipeline(){
 },
 prospects(){
   return dayBar()+`<div class="bar-tools">
-    <input type="search" id="fq" data-filter="q" placeholder="Rechercher (nom, ville, email)" value="${esc(S.f.q)}" aria-label="Rechercher">
+    <input type="search" id="fq" data-filter="q" placeholder="Rechercher (société, dirigeant, ville, téléphone, email)" value="${esc(S.f.q)}" aria-label="Rechercher">
     <select data-filter="seg" aria-label="Segment"><option value="">Tous segments</option>${SEGMENTS.map(([k,l])=>`<option value="${k}"${S.f.seg===k?' selected':''}>${l}</option>`).join('')}</select>
     <select data-filter="chan" aria-label="Canal"><option value="">Tous canaux</option>${CHANNELS.map(([k,l])=>`<option value="${k}"${S.f.chan===k?' selected':''}>${l}</option>`).join('')}</select>
     <select data-filter="stage" aria-label="Étape"><option value="actifs"${S.f.stage==='actifs'?' selected':''}>En cours</option><option value="">Toutes étapes</option>${STAGES.map(([k,l])=>`<option value="${k}"${S.f.stage===k?' selected':''}>${l}</option>`).join('')}</select>
@@ -693,7 +778,7 @@ function filtered(){
     if(f.seg&&p.segment!==f.seg)return false;if(f.chan&&p.channel!==f.chan)return false;
     if(f.stage==='actifs'){if(['perdu','stop'].includes(p.stage))return false}else if(f.stage&&p.stage!==f.stage)return false;
     if(!dayOk(p))return false;
-    if(q&&!((p.name||'')+' '+(p.city||'')+' '+(p.email||'')+' '+(p.website||'')).toLowerCase().includes(q))return false;
+    if(q&&!gsNorm(q).split(/\s+/).filter(Boolean).every(w=>gsText(p).includes(w)))return false;
     return true}).sort((a,b)=>pot(b)-pot(a)||String(a.name).localeCompare(String(b.name)));
 }
 function listHTML(){
@@ -915,12 +1000,20 @@ async function markSent(){
 
 /* ---------- canaux ---------- */
 function channelsHTML(){
-  const rows=CHANNELS.map(([k,l])=>{
-    const P=S.prospects.filter(p=>p.channel===k);if(!P.length&&!S.spend[k])return null;
-    const f=funnel(P),sp=S.spend[k]||0,ca=sum(P.filter(p=>p.signedDate),p=>p.signedAmount);
-    const cost=(n)=>sp>0&&n>0?fmt(sp/n):'—';
-    return `<tr><td><b>${l}</b></td><td class="r">${f[0][1]}</td><td class="r">${f[1][1]}</td><td class="r">${f[2][1]}</td><td class="r">${f[3][1]}</td><td class="r">${f[4][1]}</td><td class="r">${f[5][1]}</td><td class="r">${fmt(ca)}</td>
-     <td class="r"><input data-spend="${k}" inputmode="decimal" value="${sp||''}" placeholder="0" style="width:74px;text-align:right;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:3px 6px" data-write></td><td class="r">${cost(f[3][1])}</td><td class="r">${cost(f[4][1])}</td><td class="r">${cost(f[5][1])}</td></tr>`}).filter(Boolean);
+  const caTot=sum(S.prospects.filter(p=>p.signedDate),p=>p.signedAmount);
+  const verdict=(f,sp,ca)=>{const [n,c,r,,d,s]=f.map(x=>x[1]);
+    if(!n&&!sp)return ['Pas encore de fiche','off'];
+    if(s){if(sp>0){const roi=ca/sp,t=roi.toFixed(1).replace('.',',')+' € de CA par € dépensé';return roi>=3?['À pousser : '+t,'good']:roi>=1?['À optimiser : '+t,'warn']:['À couper ou revoir : '+t,'bad']}return ['Rentable : ventes sans dépense','good']}
+    if(d)return ['En cours : devis envoyés, pas encore signés',''];
+    if(sp>0&&c<30)return ['Trop tôt : '+c+' contacté'+(c>1?'s':'')+' pour '+fmt(sp)+' dépensés','warn'];
+    if(c<30)return ['Trop tôt : '+c+' contacté'+(c>1?'s':'')+' sur 30 minimum',''];
+    if(!r)return ['À revoir : 0 réponse sur '+c+' contactés','bad'];
+    return ['À suivre : '+r+' réponse'+(r>1?'s':'')+', pas encore de devis','warn'];};
+  const rows=CHANNELS.map(([k,l])=>{const P=S.prospects.filter(p=>p.channel===k),f=funnel(P),sp=S.spend[k]||0,ca=sum(P.filter(p=>p.signedDate),p=>p.signedAmount);return {k,l,f,sp,ca,v:verdict(f,sp,ca)}})
+   .sort((a,b)=>b.ca-a.ca||b.f[0][1]-a.f[0][1]||b.sp-a.sp)
+   .map(({k,l,f,sp,ca,v})=>{const cost=(n)=>sp>0&&n>0?fmt(sp/n):'—';
+    return `<tr${!f[0][1]&&!sp?' class="dim"':''}><td><b>${l}</b></td><td>${chip(v[0],v[1])}</td><td class="r">${f[0][1]}</td><td class="r">${f[1][1]}</td><td class="r">${f[2][1]}</td><td class="r">${f[3][1]}</td><td class="r">${f[4][1]}</td><td class="r">${f[5][1]}</td><td class="r">${fmt(ca)}</td><td class="r">${caTot?Math.round(100*ca/caTot)+' %':'—'}</td>
+     <td class="r"><input data-spend="${k}" inputmode="decimal" value="${sp||''}" placeholder="0" style="width:74px;text-align:right;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:3px 6px" data-write></td><td class="r">${cost(f[3][1])}</td><td class="r">${cost(f[4][1])}</td><td class="r">${cost(f[5][1])}</td></tr>`});
   const P=S.prospects,q=P.filter(p=>p.qualifiedAt).length,sg=P.filter(p=>p.signedDate);
   const active=P.filter(p=>['qualifie','devis'].includes(p.stage));
   let fc;
@@ -928,8 +1021,9 @@ function channelsHTML(){
   else{const rate=sg.length/q,panier=sum(sg,p=>p.signedAmount)/sg.length,v=active.length*rate;
     fc=`<p><b>Prévision provisoire</b> (${q} qualifiées, ${sg.length} signée(s)${q<10?' — échantillon faible, forte incertitude':''}) : taux observé ${Math.round(rate*100)} %, panier moyen ${fmt(panier)}.</p>
      <p>${active.length} opportunité(s) actives × ${Math.round(rate*100)} % ≈ <b>${v.toFixed(1)} vente(s)</b> ≈ <b>${fmt(v*panier)}</b>.</p>`}
-  return `<section class="card"><h2>Performance par canal</h2><p class="note">Les dépenses se saisissent à la main (budget pub visé par Germaine : 400 à 500 € par mois). Les coûts se calculent par prospect qualifié, par devis et par vente.</p>
-  ${rows.length?`<div class="scroll-x"><table class="t"><thead><tr><th>Canal</th><th class="r">Prospects</th><th class="r">Contactés</th><th class="r">Réponses</th><th class="r">Qualifiés</th><th class="r">Devis</th><th class="r">Ventes</th><th class="r">CA signé</th><th class="r">Dépense €</th><th class="r">€/qualifié</th><th class="r">€/devis</th><th class="r">€/vente</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>`:'<div class="empty">Aucune donnée par canal pour l\'instant.</div>'}</section>
+  return `<section class="card"><h2>D'où viennent les ventes</h2><p class="note">Le canal d'une fiche = l'endroit d'où vient le client (recherche automatique, Instagram, Leboncoin, Meta, Google, recommandation…). Il se choisit à la création de la fiche ; plus tard, Make le remplira tout seul. Chaque vente est rattachée au canal de sa fiche : c'est ce qui permet de savoir quel canal pousser et lequel couper. Les dépenses se saisissent à la main par canal (budget pub visé : 400 à 500 € par mois).</p>
+  ${rows.length?`<div class="scroll-x"><table class="t"><thead><tr><th>Canal</th><th>Verdict</th><th class="r">Prospects</th><th class="r">Contactés</th><th class="r">Réponses</th><th class="r">Qualifiés</th><th class="r">Devis</th><th class="r">Ventes</th><th class="r">CA signé</th><th class="r">Part du CA</th><th class="r">Dépense €</th><th class="r">€/qualifié</th><th class="r">€/devis</th><th class="r">€/vente</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>`:'<div class="empty">Aucune donnée par canal pour l\'instant.</div>'}
+  <p class="note" style="margin-top:8px">Repères du verdict, à ajuster avec Germaine selon sa marge : au moins 3 € de CA par € dépensé = à pousser ; entre 1 et 3 = à optimiser ; moins de 1 = à couper ou revoir. Un canal sans vente n'est jugé qu'après 30 personnes contactées.</p></section>
   <div class="grid2" style="margin-top:14px"><section class="card"><h3>Prévision</h3>${fc}<p class="note">Formules : ventes = opportunités actives × taux observé ; CA = ventes × panier moyen observé.</p></section>
   <section class="card"><h3>Sources de leads</h3><ul class="plain"><li>Toutes les sources ont leur canal : email et téléphone de prospection, Instagram, Facebook et TikTok en organique, Meta Ads, Google Ads, fiche Google, site, Leboncoin, WhatsApp, recommandations.</li><li>Une fiche créée avec un canal entrant (Instagram, Meta, Google, site, Leboncoin, WhatsApp) arrive directement au statut « Répondu », à traiter sous 2 h.</li><li>Leads Meta : export CSV du formulaire, puis « Importer CSV ».</li><li>Juge chaque canal sur le coût par devis et par vente, pas sur les clics.</li></ul><p class="note">Pas encore automatique : la remontée directe des formulaires et messages, et l'alerte Telegram à chaque demande de devis, se construisent dans Make (étape suivante).</p></section></div>`;
 }
@@ -957,17 +1051,38 @@ function resRow(x){
    <div class="sm" style="margin:4px 0">${esc(itemsTxt(x.items))}${x.note?' · <span class="muted">'+esc(x.note)+'</span>':''}</div>${miss}
    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">${acts}</div></div>`;
 }
+
+/* ---------- matériel : disponibilité visuelle ---------- */
+const JOURS=['dim.','lun.','mar.','mer.','jeu.','ven.','sam.'];
+function matLevel(a){if(!a)return {cls:'unk',pct:null,label:'Stock inconnu'};const pct=a.stock>0?Math.max(0,Math.round(100*a.free/a.stock)):0;
+  return a.free<=0?{cls:'full',pct:0,label:'Complet'}:a.used<=0?{cls:'ok',pct:100,label:'100 % libre'}:{cls:'part',pct,label:pct+' % libre'}}
+function matBar(a){const L=matLevel(a);if(L.pct==null)return '<span class="muted sm">Stock inconnu</span>';
+  return `<span class="mbar" aria-hidden="true"><i class="${L.cls==='ok'?'':L.cls}" style="width:${L.pct}%"></i></span><b style="color:${L.cls==='full'?'var(--bad)':L.cls==='part'?'var(--warn)':'var(--good)'}">${L.label}</b>`}
+function matCalHTML(){
+  const start=S.matCal||today(),days=[...Array(30)].map((_,i)=>addDays(start,i));
+  const head=days.map(d=>{const w=new Date(d+'T12:00:00').getDay(),we=w===0||w===6;return `<th class="${we?'we':''}">${we?'<span>':''}${JOURS[w].slice(0,2)}<br>${d.slice(8)}${we?'</span>':''}</th>`}).join('');
+  const rows=MAT.map(([k,l])=>`<tr><td class="it">${l}</td>${days.map(d=>{const a=avail(k,d,d,null),L=matLevel(a),w=new Date(d+'T12:00:00').getDay();
+    const tip=JOURS[w]+' '+fdateFull(d)+' : '+(a?(a.free<=0?'complet ('+a.used+' réservé'+(a.used>1?'s':'')+' sur '+a.stock+')':a.free+' '+l.toLowerCase()+' libre'+(a.free>1?'s':'')+' sur '+a.stock):'stock inconnu');
+    return `<td class="c ${L.cls}" data-tip="${esc(tip)}">${L.cls==='full'?'✕':L.cls==='part'?L.pct:L.cls==='unk'?'?':''}</td>`}).join('')}</tr>`).join('');
+  return `<section class="card" style="margin-bottom:14px"><h2>Disponibilités sur 30 jours</h2>
+   <div class="mrange"><span class="muted sm">À partir du</span><input type="date" data-matcal="1" value="${start}" aria-label="Premier jour du calendrier">
+    <button class="btn sm" data-act="matcal" data-d="-30">◀ 30 jours</button><button class="btn sm" data-act="matcal" data-d="0">Aujourd'hui</button><button class="btn sm" data-act="matcal" data-d="30">30 jours ▶</button></div>
+   <div class="scroll-x"><table class="cal"><thead><tr><th class="it"></th>${head}</tr></thead><tbody>${rows}</tbody></table></div>
+   <div class="calleg"><span><i style="background:var(--good-soft)"></i>100 % libre</span><span><i style="background:var(--warn-soft);color:var(--warn)">60</i>En partie réservé (le chiffre = % encore libre)</span><span><i style="background:var(--bad-soft);color:var(--bad)">✕</i>Complet</span><span><i style="background:var(--surface2);color:var(--muted)">?</i>Stock inconnu</span><span><i style="background:var(--ink);color:var(--bg);width:auto;padding:0 3px">sa</i>Week-end</span></div>
+   <p class="note" style="margin-top:6px">Passe la souris (ou touche) une case pour voir le nombre exact. Compte le matériel en option, confirmé ou sorti et pas encore rendu.</p></section>`;
+}
 function matHTML(){
   const r=S.r,t=today(),day=S.matDay||t,R=S.reservations;
   const n=(k,l)=>`<label class="f"><span>${l}</span><input data-ri="${k}" inputmode="numeric" value="${esc(r.items[k]||'')}"></label>`;
-  const stockRows=MAT.map(([k,l])=>{const a=avail(k,day,day,null);return `<tr><td>${l}</td><td class="r">${a?a.stock:'?'}</td><td class="r">${a?a.used:'—'}</td><td class="r"><b style="color:${a&&a.free<=0?'var(--bad)':'inherit'}">${a?a.free:'—'}</b></td></tr>`}).join('');
+  const dEnd=S.matEnd&&S.matEnd>=day?S.matEnd:day;
+  const stockRows=MAT.map(([k,l])=>{const a=avail(k,day,dEnd,null);return `<tr><td>${l}</td><td class="r">${a?a.stock:'?'}</td><td class="r">${a?a.used:'—'}</td><td class="r"><b style="color:${a&&a.free<=0?'var(--bad)':'inherit'}">${a?a.free:'—'}</b></td><td style="white-space:nowrap">${matBar(a)}</td></tr>`}).join('');
   const out7=resSorted(R.filter(x=>['option','confirmee'].includes(x.status)&&x.start&&x.start<=addDays(t,7)));
   const back=R.filter(x=>x.status==='sortie').sort((a,b)=>String(a.end||a.start).localeCompare(String(b.end||b.start)));
   const open=resSorted(R.filter(x=>['demande','option','confirmee'].includes(x.status)));
   const done=R.filter(x=>['rendue','annulee'].includes(x.status)).sort((a,b)=>String(b.updated||'').localeCompare(String(a.updated||''))).slice(0,10);
   const mini=x=>`<div class="ev"><span><b>${fdate(x.status==='sortie'?(x.end||x.start):x.start)}</b> · ${esc(x.client||'')}</span><span class="muted sm">${esc(itemsTxt(x.items))}</span></div>`;
   const sf=([k,l])=>`<label class="f"><span>${l}</span><input data-price="${k}" inputmode="numeric" value="${S.pricing[k]==null?'':S.pricing[k]}" placeholder="inconnu"></label>`;
-  return `<div class="grid2"><section class="card"><h2>Nouvelle demande de location</h2>
+  return matCalHTML()+`<div class="grid2"><section class="card"><h2>Nouvelle demande de location</h2>
    <p class="note">Pour une demande reçue par Leboncoin, téléphone, Instagram ou le site. Le stock est vérifié sur toute la période, en comptant le matériel déjà bloqué ou pas encore rendu. Une « demande » ne bloque rien : seul le passage en « Option » réserve le matériel.</p>
    <div class="fg w2"><label class="f"><span>Client</span><input data-r="client" value="${esc(r.client)}"></label><label class="f"><span>Téléphone</span><input data-r="phone" type="tel" value="${esc(r.phone)}"></label>
     <label class="f"><span>Canal</span><select data-r="channel">${CHANNELS.map(([k,l])=>`<option value="${k}"${r.channel===k?' selected':''}>${l}</option>`).join('')}</select></label>
@@ -975,9 +1090,10 @@ function matHTML(){
    <div class="sec-label">Quantités</div><div class="fg">${MAT.map(([k,l])=>n(k,l)).join('')}</div>
    <label class="f" style="margin-top:8px"><span>Note (adresse, livraison, caution…)</span><input data-r="note" value="${esc(r.note)}"></label>
    <div id="rout" style="margin-top:10px"></div></section>
-  <aside><section class="card"><h3>Disponible le <input type="date" data-matday="1" value="${day}" style="background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:4px 6px"></h3>
-   <div class="scroll-x"><table class="t"><thead><tr><th>Matériel</th><th class="r">Stock</th><th class="r">Réservé</th><th class="r">Libre</th></tr></thead><tbody>${stockRows}</tbody></table></div>
-   <p class="note">Libre = stock − matériel en option, confirmé ou sorti ce jour-là. Un matériel sorti et pas rendu reste compté jusqu'au retour.</p></section>
+  <aside><section class="card"><h3>Disponibilité sur une période</h3>
+   <div class="mrange"><span class="muted sm">Du</span><input type="date" data-matday="1" value="${day}" aria-label="Début"><span class="muted sm">au</span><input type="date" data-matend="1" value="${dEnd}" aria-label="Fin"></div>
+   <div class="scroll-x"><table class="t"><thead><tr><th>Matériel</th><th class="r">Stock</th><th class="r">Réservé</th><th class="r">Libre</th><th>Disponibilité</th></tr></thead><tbody>${stockRows}</tbody></table></div>
+   <p class="note">Libre = stock − matériel en option, confirmé ou sorti sur la période choisie. Un matériel sorti et pas rendu reste compté jusqu'au retour.</p></section>
    <section class="card"><h3>Sorties à préparer (7 jours)</h3>${out7.length?out7.map(mini).join(''):'<p class="note">Aucune sortie prévue.</p>'}</section>
    <section class="card"><h3>Retours attendus</h3>${back.length?back.map(x=>resLate(x)?mini(x).replace('<b>','<b style="color:var(--bad)">En retard · '):mini(x)).join(''):'<p class="note">Aucun matériel dehors.</p>'}</section></aside></div>
   <section class="card" style="margin-top:14px"><h3>Matériel chez les clients (${back.length})</h3>${back.length?back.map(resRow).join(''):'<p class="note">Rien à récupérer.</p>'}</section>
@@ -1114,6 +1230,9 @@ const ACT={
   tab(t){S.view=t.dataset.v;try{localStorage.setItem('gbi_view',S.view)}catch(e){}render();window.scrollTo(0,0)},
   stg(t){stState().g=t.dataset.g;try{localStorage.setItem('gbi_stg',t.dataset.g)}catch(e){}render()},
   stcsv(){stCSV()},
+  stclear(){const s=stState();s.from='';s.to='';render()},
+  matcal(t){const d=+t.dataset.d;S.matCal=d?addDays(S.matCal||today(),d):today();render()},
+  gsopen(t){$('#gsres').hidden=true;$('#gsq').value='';openDrawer(t.dataset.id)},
   open(t){openDrawer(t.dataset.id)},
   newp(){openDrawer(null)},
   close(){closeDrawer()},
@@ -1197,7 +1316,9 @@ document.addEventListener('change',e=>{
   if(t.id==='who'){S.who=t.value;try{localStorage.setItem('gbi_who',S.who)}catch(x){}if(S.view==='messages')updateMsg();return}
   if(t.dataset.stf){stState()[t.dataset.stf]=t.value;render();return}
   if(t.dataset.r){S.r[t.dataset.r]=t.value;updateMat();return}
-  if(t.dataset.matday){S.matDay=t.value;render();return}
+  if(t.dataset.matday){S.matDay=t.value;if(S.matEnd&&S.matEnd<t.value)S.matEnd=t.value;render();return}
+  if(t.dataset.matend){S.matEnd=t.value;render();return}
+  if(t.dataset.matcal){S.matCal=t.value||today();render();return}
   if(t.dataset.day){S.day=t.value;S.call.pid='';S.showAll=false;render();return}
   if(t.dataset.filter){S.f[t.dataset.filter]=t.value;const l=$('#plist');if(l)l.innerHTML=listHTML();return}
   if(t.dataset.q){
