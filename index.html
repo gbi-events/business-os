@@ -23,7 +23,18 @@
 .chart g.col:hover path.b{opacity:.75}
 #sttip{position:fixed;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12px;padding:6px 9px;border-radius:6px;z-index:80;white-space:nowrap;box-shadow:var(--shadow)}
 .delta{font-weight:600}.delta.up{color:var(--good)}.delta.down{color:var(--bad)}
-@media (max-width:820px){.stkpis{grid-template-columns:repeat(2,minmax(0,1fr))}.stgrid{grid-template-columns:1fr}}
+.stgrid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.stgrid3 .card+.card{margin-top:0}
+.hb{display:flex;flex-direction:column;gap:7px}
+.hbr{display:grid;grid-template-columns:minmax(80px,40%) 1fr auto;gap:8px;align-items:center;font-size:12.5px}
+.hbl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hbt{height:12px;display:block}
+.hbt i{display:block;height:100%;background:var(--accent);border-radius:0 4px 4px 0}
+.money .hbt i{background:var(--brass)}
+.hbv{font-variant-numeric:tabular-nums;font-weight:600;min-width:42px;text-align:right}
+.hbr:hover .hbt i{opacity:.75}
+@media (max-width:1000px){.stgrid3{grid-template-columns:1fr 1fr}}
+@media (max-width:820px){.stkpis{grid-template-columns:repeat(2,minmax(0,1fr))}.stgrid,.stgrid3{grid-template-columns:1fr}}
 
 /* matériel : disponibilité */
 .mbar{display:inline-block;width:64px;height:8px;border-radius:4px;background:var(--surface2);vertical-align:middle;overflow:hidden;margin-right:6px}
@@ -569,7 +580,7 @@ function stLabel(k,g,long){
 }
 function stEvents(){
   const st=stState(),E=[];
-  S.prospects.forEach(p=>{
+  S.prospects.forEach(p=>{const i0=E.length;
     if(st.chan&&p.channel!==st.chan)return;
     (p.log||[]).forEach(l=>{
       const x=String(l.x||'');if(st.who&&l.by!==st.who&&(x.startsWith('Appel : ')||/^(Message|Email) envoyé/.test(x)))return;
@@ -580,6 +591,7 @@ function stEvents(){
     if(p.repliedAt)E.push({k:'reply',t:p.repliedAt});
     if(p.quoteDate)E.push({k:'quote',t:p.quoteDate,v:num(p.quoteAmount)});
     if(p.signedDate){E.push({k:'sign',t:p.signedDate});E.push({k:'ca',t:p.signedDate,v:num(p.signedAmount)});E.push({k:'cash',t:p.signedDate,v:num(p.cashedAmount)})}
+    for(let i=i0;i<E.length;i++){E[i].ch=p.channel;E[i].seg=p.segment}
   });
   return E;
 }
@@ -655,7 +667,30 @@ function statsHTML(){
     <tr><td><b>Total</b></td>${cols.map(([c])=>`<td class="r"><b>${c==='ca'||c==='cash'?fmt(T(c)):stInt(T(c))}</b></td>`).join('')}</tr></tbody></table></div>
     <p style="margin-top:8px"><button class="btn sm" data-act="stcsv">Exporter en CSV</button></p></details>`;
   const foot=`<p class="note" style="margin-top:10px">Le filtre « Personne » s'applique aux appels et aux messages. Le CA encaissé est rattaché à la date de signature. Les dépenses par canal se saisissent dans l'onglet Canaux.</p>`;
-  return `<h2 style="margin-bottom:10px">Statistiques</h2>${bar}${kp}${charts}${ratios}${table}${foot}`;
+  const from=R?R.from:(g==='mois'?keys[0]+'-01':keys[0]),to=R?R.to:today();
+  const inR=E.filter(e=>{const d=stKey(e.t,'jour');return d&&d>=from&&d<=to});
+  const by=(kind,field,labels)=>{const m={};inR.filter(e=>e.k===kind).forEach(e=>{const key=e[field]||'?';m[key]=(m[key]||0)+(kind==='ca'?e.v||0:1)});
+    return Object.entries(m).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).map(([k,v])=>[(labels[k]||'Non renseigné').replace(/\s*\(.*?\)\s*$/,''),v])};
+  const src=`<h2 style="margin:22px 0 4px">D'où viennent les prospects et les ventes</h2><p class="note" style="margin:0 0 10px">Sur la même période. Le détail par canal, avec les dépenses et le verdict (pousser, optimiser, couper), est dans l'onglet <button class="btn sm" data-act="tab" data-v="channels">Canaux</button></p>
+   <div class="stgrid3">${stHB('Nouveaux prospects par canal','',by('lead','ch',CH_L))}${stHB('Réponses par canal','',by('reply','ch',CH_L))}${stHB('Chiffre d\'affaires signé par canal','',by('ca','ch',CH_L),1)}</div>
+   <div class="stgrid" style="margin-top:14px">${stHB('Nouveaux prospects par type de client','',by('lead','seg',SEG_L))}${stHB('Chiffre d\'affaires signé par type de client','',by('ca','seg',SEG_L),1)}</div>`;
+  const PP=S.prospects.filter(p=>!st.chan||p.channel===st.chan);
+  const pipe=STAGES.map(([k,l])=>{const L=PP.filter(p=>p.stage===k),amt=k==='devis'?sum(L,p=>p.quoteAmount):k==='signe'?sum(L,p=>p.signedAmount):0;return [l+(amt?' · '+fmt(amt):''),L.length]}).filter(x=>x[1]>0);
+  const lost={};PP.filter(p=>p.stage==='perdu').forEach(p=>{const r=p.lostReason||'Non renseigné';lost[r]=(lost[r]||0)+1});
+  const pipeline=`<h2 style="margin:22px 0 4px">Pipeline aujourd'hui</h2><p class="note" style="margin:0 0 10px">État actuel de toutes les fiches${st.chan?' du canal choisi':''}, quelle que soit la période.</p>
+   <div class="stgrid">${stHB('Fiches par étape','',pipe,0,'Aucune fiche.',1)}${stHB('Motifs de perte','',Object.entries(lost).sort((a,b)=>b[1]-a[1]),0,'Aucune fiche perdue pour l\'instant.')}</div>`;
+  const RR=S.reservations.filter(r=>['option','confirmee','sortie','rendue'].includes(r.status)&&r.start&&r.start>=from&&r.start<=to);
+  const qty=MAT.map(([k,l])=>[l,sum(RR,r=>(r.items||{})[k])]).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]);
+  const rst={};RR.forEach(r=>{const l=(typeof RSTAT_L!=='undefined'&&RSTAT_L[r.status])||r.status;rst[l]=(rst[l]||0)+1});
+  const mat=`<h2 style="margin:22px 0 4px">Location de matériel</h2><p class="note" style="margin:0 0 10px">Réservations dont la date de retrait tombe dans la période (${RR.length} au total).</p>
+   <div class="stgrid">${stHB('Locations par statut','',Object.entries(rst).sort((a,b)=>b[1]-a[1]),0,'Aucune location sur la période.')}${stHB('Quantités louées','',qty,0,'Aucun matériel loué sur la période.')}</div>`;
+  return `<h2 style="margin-bottom:10px">Statistiques</h2>${bar}${kp}${charts}${src}${pipeline}${mat}${ratios}${table}${foot}`;
+}
+function stHB(title,note,items,money,empty,keepOrder){
+  const mx=Math.max(1,...items.map(x=>x[1])),tot=items.reduce((a,x)=>a+x[1],0);
+  const fv=v=>money?(v>=1000?new Intl.NumberFormat('fr-FR',{maximumFractionDigits:1}).format(v/1000)+' k€':stInt(v)+' €'):stInt(v);
+  return `<section class="card${money?' money':''}"><h3 style="margin-bottom:8px">${title}</h3>${note?`<p class="note" style="margin:0 0 8px">${note}</p>`:''}${items.length?`<div class="hb">${items.map(([l,v])=>{const pct=tot?Math.round(100*v/tot):0;
+    return `<div class="hbr" data-tip="${esc(l)} : ${money?fmt(v):stInt(v)} (${pct} %)"><span class="hbl">${esc(l)}</span><span class="hbt"><i style="width:${Math.max(1.5,100*v/mx)}%"></i></span><span class="hbv">${fv(v)}</span></div>`}).join('')}</div>`:`<p class="note">${empty||'Aucune donnée sur la période.'}</p>`}</section>`;
 }
 function stNice(m){if(m<=4)return 4;const p=Math.pow(10,Math.floor(Math.log10(m))),f=m/p;return (f<=1?1:f<=2?2:f<=4?4:f<=6?6:f<=8?8:10)*p}
 function stDraw(){
@@ -691,8 +726,8 @@ async function stCSV(){
   let tip=null;const hide=()=>{if(tip)tip.hidden=true};
   const show=(el,e)=>{if(!tip){tip=document.createElement('div');tip.id='sttip';tip.setAttribute('role','status');document.body.appendChild(tip)}
     tip.textContent=el.dataset.tip;tip.hidden=false;const w=tip.offsetWidth;let x=e.clientX+12;if(x+w>innerWidth-8)x=e.clientX-w-12;tip.style.left=Math.max(8,x)+'px';tip.style.top=(e.clientY-36)+'px'};
-  document.addEventListener('mousemove',e=>{const el=e.target.closest&&e.target.closest('.chartbox [data-tip],.cal [data-tip]');if(el)show(el,e);else hide()});
-  document.addEventListener('click',e=>{const el=e.target.closest&&e.target.closest('.chartbox [data-tip],.cal [data-tip]');if(el)show(el,e)});
+  document.addEventListener('mousemove',e=>{const el=e.target.closest&&e.target.closest('.chartbox [data-tip],.cal [data-tip],.hb [data-tip]');if(el)show(el,e);else hide()});
+  document.addEventListener('click',e=>{const el=e.target.closest&&e.target.closest('.chartbox [data-tip],.cal [data-tip],.hb [data-tip]');if(el)show(el,e)});
   document.addEventListener('scroll',hide,true);
   let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{if(S.view==='stats')stDraw()},150)});
 })();
