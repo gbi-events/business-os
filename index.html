@@ -72,6 +72,7 @@
 tr.dim td{color:var(--muted)}
 
 /* aide */
+.top .who{flex-wrap:wrap;row-gap:6px}
 #help{position:fixed;inset:0;background:rgba(10,18,15,.55);z-index:90;display:flex;justify-content:center;align-items:flex-start;padding:24px 16px;overflow:auto}
 #help[hidden]{display:none}
 #help .hp{background:var(--bg);color:var(--ink);border-radius:14px;max-width:860px;width:100%;box-shadow:var(--shadow);border:1px solid var(--line)}
@@ -300,7 +301,7 @@ body.authed #login{display:none}
     <div class="who">
       <span id="sync"><i class="dot"></i> <span id="synctext">Connexion…</span></span>
       <label>Je suis <select id="who" aria-label="Qui utilise l'application"></select></label>
-      <button class="btn sm" data-act="help" type="button" aria-haspopup="dialog" aria-label="Explication de l'outil" title="Explication de l'outil">?<span class="hlbl"> Explication de l'outil</span></button>
+      <button class="btn sm" data-act="help" type="button" aria-haspopup="dialog" title="Explication de l'outil">Explication<span class="hlbl"> de l'outil</span></button>
       <button class="btn sm" id="logout" type="button">Déconnexion</button>
     </div>
   </header>
