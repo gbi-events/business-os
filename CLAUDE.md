@@ -9,6 +9,11 @@ Ce dépôt est modifié par le Claude de Germaine (propriétaire de GBI Events) 
 - Ne mets jamais la clé `service_role`, un mot de passe ou une clé privée dans ce dépôt public.
 - Après une modification, vérifie que la page se charge, que la connexion fonctionne et que les fiches s'affichent.
 
+## Onglet Statistiques
+- Il lit les dates des fiches (`created`, `repliedAt`, `quoteDate`, `signedDate`) et leur journal `log`.
+- Lignes de journal comptées : `Appel : <résultat>` (onglet Appels), `Message envoyé : …` (onglet Messages), `Email envoyé : …` (envois automatiques).
+- Toute automatisation qui envoie un email (Make, Instantly) doit ajouter une ligne `Email envoyé : email 1`, `Email envoyé : relance 1` ou `Email envoyé : relance 2` dans le `log` de la fiche, sinon l'envoi n'apparaît pas dans les statistiques.
+
 ## Règles commerciales de GBI Events
 - **Argument principal : le clé en main.** Un seul interlocuteur pour le traiteur, la décoration et le matériel.
 - **Traiteur pour tout type de client :** la cuisine africaine est la spécialité mise en avant, pas toute l'offre.

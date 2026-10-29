@@ -1,6 +1,6 @@
 # GBI Business OS
 
-Outil commercial de **GBI Events** : prospects, appels, devis, stock de matériel, messages et performance par canal.
+Outil commercial de **GBI Events** : prospects, appels, devis, stock de matériel, messages, performance par canal et statistiques (appels, emails, devis, événements signés et chiffre d'affaires, par jour, semaine ou mois).
 
 - **Site :** https://gbi-events.github.io/business-os/ (GitHub Pages, branche `main`)
 - **Données :** Supabase, projet `gbi-business-os` (organisation GBI Events)

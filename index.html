@@ -1,4 +1,29 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+/* statistiques */
+.stbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.stbar select{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+.stseg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.stseg button{border:0;background:var(--surface);padding:7px 14px;font-weight:500;color:var(--ink)}
+.stseg button+button{border-left:1px solid var(--line)}
+.stseg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.stkpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.stkpis .kpi b{font-size:26px}
+.stgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.stgrid .card+.card{margin-top:0}
+.chartbox{min-height:180px}
+.chart{display:block;max-width:100%}
+.chart .gl{stroke:var(--line);stroke-width:1}
+.chart .gl.base{stroke:var(--muted);opacity:.5}
+.chart .ax{fill:var(--muted);font-size:11px;font-family:var(--f-body)}
+.chart .vl{fill:var(--ink);font-size:11px;font-weight:600;font-family:var(--f-body)}
+.chart path.b{fill:var(--accent)}
+.chartbox.money .chart path.b{fill:var(--brass)}
+.chart rect.hit{fill:transparent;cursor:default}
+.chart g.col:hover path.b{opacity:.75}
+#sttip{position:fixed;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12px;padding:6px 9px;border-radius:6px;z-index:80;white-space:nowrap;box-shadow:var(--shadow)}
+.delta{font-weight:600}.delta.up{color:var(--good)}.delta.down{color:var(--bad)}
+@media (max-width:820px){.stkpis{grid-template-columns:repeat(2,minmax(0,1fr))}.stgrid{grid-template-columns:1fr}}
+</style></head><body>
 <title>GBI Business OS</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&display=swap">
 <style>
@@ -472,6 +497,148 @@ async function callResult(r){
   }
   if(ok){S.call.pid='';S.call.note='';toast(label+' enregistré.');render()}
 }
+/* ---------- statistiques ---------- */
+const ST_GRAN=[['jour','Jour','30 derniers jours, comparés aux 30 jours d\'avant'],['semaine','Semaine','12 dernières semaines, comparées aux 12 semaines d\'avant'],['mois','Mois','12 derniers mois, comparés aux 12 mois d\'avant']];
+const ST_JOINT=['Intéressé','À rappeler','Pas intéressé','Ne plus appeler'];
+const ST_MOIS=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+const ST_SERIES=[
+  ['call','Appels passés','Résultats saisis dans l\'onglet Appels.'],
+  ['joint','Conversations','Appels où la personne a été jointe (intéressé, à rappeler, pas intéressé, ne plus appeler).'],
+  ['msg','Emails et messages envoyés','« Marquer comme envoyé » dans Messages, puis les envois automatiques de la phase 2.'],
+  ['reply','Réponses reçues','Fiches passées au statut « Répondu » ou au-delà.'],
+  ['lead','Nouveaux prospects','Fiches ajoutées au Business OS.'],
+  ['quote','Devis envoyés','Fiches passées à « Devis envoyé ».'],
+  ['sign','Événements signés','Fiches passées à « Signé ».'],
+  ['ca','Chiffre d\'affaires signé','Montant signé, à la date de signature.',1]
+];
+function stState(){if(!S.st){let g='semaine';try{g=localStorage.getItem('gbi_stg')||g}catch(e){}S.st={g:ST_GRAN.some(x=>x[0]===g)?g:'semaine',who:'',chan:''}}return S.st}
+function stKey(iso,g){
+  if(!iso)return null;const s=String(iso);
+  const d=s.length>10?new Date(s):new Date(s.slice(0,10)+'T12:00:00');if(isNaN(d))return null;
+  if(g==='jour')return toISO(d);
+  if(g==='mois')return toISO(d).slice(0,7);
+  d.setDate(d.getDate()-((d.getDay()+6)%7));return toISO(d);
+}
+function stBuckets(g,offset){
+  const t=new Date();t.setHours(12,0,0,0);const out=[];
+  if(g==='jour'){for(let i=29+offset;i>=offset;i--){const d=new Date(t);d.setDate(d.getDate()-i);out.push(toISO(d))}}
+  else if(g==='semaine'){const m=new Date(t);m.setDate(m.getDate()-((m.getDay()+6)%7));for(let i=11+offset;i>=offset;i--){const d=new Date(m);d.setDate(d.getDate()-7*i);out.push(toISO(d))}}
+  else{for(let i=11+offset;i>=offset;i--){const d=new Date(t.getFullYear(),t.getMonth()-i,1,12);out.push(toISO(d).slice(0,7))}}
+  return out;
+}
+function stLabel(k,g,long){
+  if(g==='mois'){const [y,m]=k.split('-');return ST_MOIS[+m-1]+(long?' '+y:'')}
+  const [,m,d]=k.split('-');return (g==='semaine'&&long?'Semaine du ':'')+d+'/'+m;
+}
+function stEvents(){
+  const st=stState(),E=[];
+  S.prospects.forEach(p=>{
+    if(st.chan&&p.channel!==st.chan)return;
+    (p.log||[]).forEach(l=>{
+      const x=String(l.x||'');if(st.who&&l.by!==st.who&&(x.startsWith('Appel : ')||/^(Message|Email) envoyé/.test(x)))return;
+      if(x.startsWith('Appel : ')){const r=x.slice(8).split(' — ')[0].trim();E.push({k:'call',t:l.t});if(ST_JOINT.includes(r))E.push({k:'joint',t:l.t});if(r==='Intéressé')E.push({k:'int',t:l.t})}
+      else if(/^(Message|Email) envoyé/.test(x))E.push({k:'msg',t:l.t});
+    });
+    const c=p.created||p.discovered;if(c)E.push({k:'lead',t:c});
+    if(p.repliedAt)E.push({k:'reply',t:p.repliedAt});
+    if(p.quoteDate)E.push({k:'quote',t:p.quoteDate,v:num(p.quoteAmount)});
+    if(p.signedDate){E.push({k:'sign',t:p.signedDate});E.push({k:'ca',t:p.signedDate,v:num(p.signedAmount)});E.push({k:'cash',t:p.signedDate,v:num(p.cashedAmount)})}
+  });
+  return E;
+}
+function stAgg(E,keys,g){
+  const idx=Object.fromEntries(keys.map((k,i)=>[k,i])),A={};
+  ['call','joint','int','msg','lead','reply','quote','quoteV','sign','ca','cash'].forEach(k=>A[k]=keys.map(()=>0));
+  E.forEach(e=>{const b=idx[stKey(e.t,g)];if(b===undefined)return;
+    if(e.k==='ca'||e.k==='cash')A[e.k][b]+=e.v||0;else{A[e.k][b]++;if(e.k==='quote')A.quoteV[b]+=e.v||0}});
+  return A;
+}
+const stTot=a=>a.reduce((s,x)=>s+x,0);
+const stInt=n=>new Intl.NumberFormat('fr-FR').format(Math.round(n));
+function stDelta(cur,prev,money){
+  if(!prev)return cur?'Rien sur la période précédente':'Aucune activité sur les deux périodes';
+  const p=Math.round(100*(cur-prev)/prev);
+  return `<span class="delta ${p>0?'up':p<0?'down':''}">${p>0?'▲ +':p<0?'▼ ':'= '}${p} %</span> vs période précédente (${money?fmt(prev):stInt(prev)})`;
+}
+function stRate(a,b){if(!b)return '—';return Math.round(100*a/b)+' %'}
+function statsHTML(){
+  const st=stState(),g=st.g,G=ST_GRAN.find(x=>x[0]===g);
+  const keys=stBuckets(g,0),prevKeys=stBuckets(g,keys.length),E=stEvents();
+  const A=stAgg(E,keys,g),P=stAgg(E,prevKeys,g),T=k=>stTot(A[k]),PT=k=>stTot(P[k]);
+  S.stData={keys,A,g};
+  const tile=(label,k,money,sub)=>`<div class="kpi"><span class="kl">${label}</span><b>${money?fmt(T(k)):stInt(T(k))}</b><span class="ks">${sub||stDelta(T(k),PT(k),money)}</span></div>`;
+  const kp=`<section class="stkpis" aria-label="Totaux de la période">
+    ${tile('Appels passés','call')}
+    ${tile('Conversations','joint',0,`${stRate(T('joint'),T('call'))} des appels · ${stDelta(T('joint'),PT('joint'))}`)}
+    ${tile('Emails et messages','msg')}
+    ${tile('Réponses reçues','reply')}
+    ${tile('Devis envoyés','quote',0,`${fmt(T('quoteV'))} au total · ${stDelta(T('quote'),PT('quote'))}`)}
+    ${tile('Événements signés','sign')}
+    ${tile('CA signé','ca',1)}
+    ${tile('CA encaissé','cash',1)}</section>`;
+  const opts=(L,v)=>L.map(([k,l])=>`<option value="${k}"${v===k?' selected':''}>${l}</option>`).join('');
+  const bar=`<div class="stbar"><div class="stseg" role="group" aria-label="Regrouper par">${ST_GRAN.map(([k,l])=>`<button data-act="stg" data-g="${k}" aria-pressed="${g===k}">${l}</button>`).join('')}</div>
+    <select data-stf="who" aria-label="Personne"><option value="">Tout le monde</option>${opts([['Kissima','Kissima'],['Germaine','Germaine']],st.who)}</select>
+    <select data-stf="chan" aria-label="Canal"><option value="">Tous les canaux</option>${opts(CHANNELS,st.chan)}</select>
+    <span class="muted sm">${G[2]}</span></div>`;
+  const charts=`<div class="stgrid">${ST_SERIES.map(([k,l,h,m])=>`<section class="card"><h3 style="margin-bottom:2px">${l}</h3><p class="note" style="margin:0 0 6px">${h}</p><div class="chartbox${m?' money':''}" data-k="${k}" data-label="${esc(l)}"></div></section>`).join('')}</div>`;
+  const nInt=T('int'),nJ=T('joint'),nS=T('sign');
+  const warn=n=>n<30?` <span class="muted">(${n} : échantillon faible)</span>`:'';
+  const ratios=`<section class="card" style="margin-top:14px"><h3>Taux de transformation sur la période</h3><div class="scroll-x"><table class="t"><thead><tr><th>Étape</th><th class="r">Calcul</th><th class="r">Taux</th></tr></thead><tbody>
+    <tr><td>Appels qui aboutissent à une conversation</td><td class="r">${stInt(nJ)} ÷ ${stInt(T('call'))}</td><td class="r"><b>${stRate(nJ,T('call'))}</b>${warn(T('call'))}</td></tr>
+    <tr><td>Conversations qui donnent un intéressé</td><td class="r">${stInt(nInt)} ÷ ${stInt(nJ)}</td><td class="r"><b>${stRate(nInt,nJ)}</b>${warn(nJ)}</td></tr>
+    <tr><td>Emails et messages qui obtiennent une réponse</td><td class="r">${stInt(T('reply'))} ÷ ${stInt(T('msg'))}</td><td class="r"><b>${stRate(T('reply'),T('msg'))}</b>${warn(T('msg'))}</td></tr>
+    <tr><td>Devis qui deviennent un événement signé</td><td class="r">${stInt(nS)} ÷ ${stInt(T('quote'))}</td><td class="r"><b>${stRate(nS,T('quote'))}</b>${warn(T('quote'))}</td></tr>
+    <tr><td>Panier moyen signé</td><td class="r">${fmt(T('ca'))} ÷ ${stInt(nS)}</td><td class="r"><b>${nS?fmt(T('ca')/nS):'—'}</b></td></tr>
+    </tbody></table></div><p class="note">Les réponses comptent toutes les fiches passées en « Répondu », y compris les demandes entrantes. En dessous de 30, un taux ne veut encore rien dire.</p></section>`;
+  const cols=[['call','Appels'],['joint','Conversations'],['msg','Emails/messages'],['reply','Réponses'],['lead','Nouveaux prospects'],['quote','Devis'],['sign','Signés'],['ca','CA signé'],['cash','CA encaissé']];
+  const table=`<details class="card" style="margin-top:14px"><summary><b>Voir les chiffres en tableau</b></summary><div class="scroll-x" style="margin-top:8px"><table class="t"><thead><tr><th>${G[1]}</th>${cols.map(c=>`<th class="r">${c[1]}</th>`).join('')}</tr></thead><tbody>
+    ${keys.map((k,i)=>`<tr><td>${stLabel(k,g,1)}</td>${cols.map(([c])=>`<td class="r">${c==='ca'||c==='cash'?fmt(A[c][i]):A[c][i]}</td>`).join('')}</tr>`).reverse().join('')}
+    <tr><td><b>Total</b></td>${cols.map(([c])=>`<td class="r"><b>${c==='ca'||c==='cash'?fmt(T(c)):stInt(T(c))}</b></td>`).join('')}</tr></tbody></table></div>
+    <p style="margin-top:8px"><button class="btn sm" data-act="stcsv">Exporter en CSV</button></p></details>`;
+  const foot=`<p class="note" style="margin-top:10px">Le filtre « Personne » s'applique aux appels et aux messages. Le CA encaissé est rattaché à la date de signature. Les dépenses par canal se saisissent dans l'onglet Canaux.</p>`;
+  return `<h2 style="margin-bottom:10px">Statistiques</h2>${bar}${kp}${charts}${ratios}${table}${foot}`;
+}
+function stNice(m){if(m<=4)return 4;const p=Math.pow(10,Math.floor(Math.log10(m))),f=m/p;return (f<=1?1:f<=2?2:f<=4?4:f<=6?6:f<=8?8:10)*p}
+function stDraw(){
+  const D=S.stData;if(!D)return;
+  document.querySelectorAll('.chartbox').forEach(box=>{
+    const k=box.dataset.k,money=box.classList.contains('money'),vals=D.A[k],n=vals.length;
+    const W=Math.max(260,box.clientWidth),H=180,L=money?58:34,R=6,T=16,B=22,pw=(W-L-R)/n,gap=2,bw=Math.max(1,pw-gap);
+    const top=stNice(Math.max(...vals,0)),y=v=>T+(H-T-B)*(1-v/top),fv=v=>money?(v>=1000?new Intl.NumberFormat('fr-FR',{maximumFractionDigits:1}).format(v/1000)+' k€':stInt(v)+' €'):stInt(v);
+    let s=`<svg class="chart" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(box.dataset.label)} : ${money?fmt(stTot(vals)):stInt(stTot(vals))} sur la période">`;
+    [0,.5,1].forEach(f=>{const v=top*f,yy=Math.round(y(v))+.5;s+=`<line class="gl${f?'':' base'}" x1="${L}" x2="${W-R}" y1="${yy}" y2="${yy}"/><text class="ax" x="${L-6}" y="${yy+3}" text-anchor="end">${fv(v)}</text>`});
+    const step=Math.ceil(n/(W<420?5:8));let mxI=-1,mxV=0;vals.forEach((v,i)=>{if(v>mxV){mxV=v;mxI=i}});
+    vals.forEach((v,i)=>{
+      const x=L+i*pw+gap/2,yt=y(v),h=Math.max(0,H-B-yt),r=Math.min(4,bw/2,h);
+      const tip=`${stLabel(D.keys[i],D.g,1)} : ${money?fmt(v):stInt(v)+' '+box.dataset.label.toLowerCase()}`;
+      s+=`<g class="col" data-tip="${esc(tip)}">`;
+      if(h>0)s+=`<path class="b" d="M${x},${H-B} V${yt+r} Q${x},${yt} ${x+r},${yt} H${x+bw-r} Q${x+bw},${yt} ${x+bw},${yt+r} V${H-B} Z"/>`;
+      s+=`<rect class="hit" x="${L+i*pw}" y="${T}" width="${pw}" height="${H-T-B}"/></g>`;
+      if((n-1-i)%step===0)s+=`<text class="ax" x="${x+bw/2}" y="${H-6}" text-anchor="middle">${stLabel(D.keys[i],D.g)}</text>`;
+      if(v>0&&(i===mxI||i===n-1)&&bw>=6)s+=`<text class="vl" x="${x+bw/2}" y="${yt-4}" text-anchor="middle">${fv(v)}</text>`;
+    });
+    if(!mxV)s+=`<text class="ax" x="${(L+W-R)/2}" y="${H/2}" text-anchor="middle">Aucune donnée sur la période</text>`;
+    box.innerHTML=s+'</svg>';
+  });
+}
+async function stCSV(){
+  const D=S.stData;if(!D)return;const cols=[['call','Appels'],['joint','Conversations'],['msg','Emails et messages'],['reply','Réponses'],['lead','Nouveaux prospects'],['quote','Devis'],['quoteV','Montant devis €'],['sign','Signés'],['ca','CA signé €'],['cash','CA encaissé €']];
+  const q=v=>'"'+String(v).replace(/"/g,'""')+'"';
+  const csv='﻿'+[q('Période')].concat(cols.map(c=>q(c[1]))).join(';')+'\n'+D.keys.map((k,i)=>[q(stLabel(k,D.g,1))].concat(cols.map(([c])=>q(String(Math.round(D.A[c][i]*100)/100).replace('.',',')))).join(';')).join('\n');
+  if(!S.downloads){toast("Export indisponible dans cette vue.",true);return}
+  try{await S.downloads.save({filename:'gbi-statistiques-'+D.g+'.csv',data:csv})}catch(e){if(!e||e.code!=='declined')toast("Export impossible"+(e&&e.code?' ('+e.code+')':'')+'.',true)}
+}
+(function(){
+  let tip=null;const hide=()=>{if(tip)tip.hidden=true};
+  const show=(el,e)=>{if(!tip){tip=document.createElement('div');tip.id='sttip';tip.setAttribute('role','status');document.body.appendChild(tip)}
+    tip.textContent=el.dataset.tip;tip.hidden=false;const w=tip.offsetWidth;let x=e.clientX+12;if(x+w>innerWidth-8)x=e.clientX-w-12;tip.style.left=Math.max(8,x)+'px';tip.style.top=(e.clientY-36)+'px'};
+  document.addEventListener('mousemove',e=>{const el=e.target.closest&&e.target.closest('.chartbox [data-tip]');if(el)show(el,e);else hide()});
+  document.addEventListener('click',e=>{const el=e.target.closest&&e.target.closest('.chartbox [data-tip]');if(el)show(el,e)});
+  document.addEventListener('scroll',hide,true);
+  let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{if(S.view==='stats')stDraw()},150)});
+})();
+
 const VIEWS={
 calls(){return callsHTML()},
 nophone(){return nophoneHTML()},
@@ -515,6 +682,7 @@ prospects(){
 quote(){return quoteHTML()},
 messages(){return msgHTML()},
 channels(){return channelsHTML()},
+stats(){return statsHTML()},
 rules(){return rulesHTML()},
 materiel(){return matHTML()}
 };
@@ -916,7 +1084,7 @@ function reDrawer(){if(!S.drawer)return;const d=$('#drawer'),sc=d.querySelector(
 /* ---------- rendu général ---------- */
 function renderTabs(){
   const n=queue().length;
-  const T=[['today','Aujourd\'hui',n],['calls','Appels',callQueue().length||''],['nophone','Sans téléphone',noPhoneList().length||''],['pipeline','Pipeline'],['prospects','Prospects'],['quote','Devis'],['materiel','Matériel',matAlerts()||''],['messages','Messages'],['channels','Canaux'],['rules','Règles']];
+  const T=[['today','Aujourd\'hui',n],['calls','Appels',callQueue().length||''],['nophone','Sans téléphone',noPhoneList().length||''],['pipeline','Pipeline'],['stats','Statistiques'],['prospects','Prospects'],['quote','Devis'],['materiel','Matériel',matAlerts()||''],['messages','Messages'],['channels','Canaux'],['rules','Règles']];
   $('#tabs').innerHTML=T.map(([k,l,c])=>`<button data-act="tab" data-v="${k}"${S.view===k?' aria-current="page"':''}>${l}${c?`<span class="n">${c}</span>`:''}</button>`).join('');
   const w=$('#who');w.innerHTML=`<option value="">— choisir —</option><option${S.who==='Kissima'?' selected':''}>Kissima</option><option${S.who==='Germaine'?' selected':''}>Germaine</option>`;
 }
@@ -932,7 +1100,7 @@ function banners(){
 function render(){
   renderTabs();banners();
   main.innerHTML=(VIEWS[S.view]||VIEWS.today)();
-  if(S.view==='quote')updateQuote();if(S.view==='messages')updateMsg();if(S.view==='materiel')updateMat();
+  if(S.view==='quote')updateQuote();if(S.view==='messages')updateMsg();if(S.view==='materiel')updateMat();if(S.view==='stats')stDraw();
   $('#app').classList.toggle('ro',!S.canWrite);S.dirty=false;
 }
 function refresh(){
@@ -944,6 +1112,8 @@ function refresh(){
 /* ---------- événements ---------- */
 const ACT={
   tab(t){S.view=t.dataset.v;try{localStorage.setItem('gbi_view',S.view)}catch(e){}render();window.scrollTo(0,0)},
+  stg(t){stState().g=t.dataset.g;try{localStorage.setItem('gbi_stg',t.dataset.g)}catch(e){}render()},
+  stcsv(){stCSV()},
   open(t){openDrawer(t.dataset.id)},
   newp(){openDrawer(null)},
   close(){closeDrawer()},
@@ -1025,6 +1195,7 @@ document.addEventListener('input',e=>{
 document.addEventListener('change',e=>{
   const t=e.target;
   if(t.id==='who'){S.who=t.value;try{localStorage.setItem('gbi_who',S.who)}catch(x){}if(S.view==='messages')updateMsg();return}
+  if(t.dataset.stf){stState()[t.dataset.stf]=t.value;render();return}
   if(t.dataset.r){S.r[t.dataset.r]=t.value;updateMat();return}
   if(t.dataset.matday){S.matDay=t.value;render();return}
   if(t.dataset.day){S.day=t.value;S.call.pid='';S.showAll=false;render();return}
