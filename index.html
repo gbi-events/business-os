@@ -289,9 +289,9 @@ const STAGE_L=Object.fromEntries(STAGES);
 const PIPE=['a_contacter','contacte','repondu','qualifie','devis','signe'];
 const SEGMENTS=[['lieu','Lieu / domaine / château'],['planner','Wedding planner'],['agence','Agence événementielle'],['traiteur','Traiteur / décorateur'],['entreprise','Entreprise / association'],['particulier','Particulier']];
 const SEG_L=Object.fromEntries(SEGMENTS);
-const CHANNELS=[['b2b','Email de prospection (B2B)'],['phone','Prospection téléphonique'],['instagram','Instagram (organique, DM)'],['social','Facebook / TikTok / groupes (organique)'],['meta','Meta Ads (Facebook, Instagram)'],['google','Google Ads'],['gbp','Fiche Google / référencement'],['site','Formulaire du site'],['lbc','Leboncoin'],['whatsapp','WhatsApp'],['reco','Recommandation / partenaire'],['entrant','Autre demande entrante'],['autre','Autre']];
+const CHANNELS=[['b2b','Prospection (recherche, appels, emails)'],['site','Site internet (formulaire, messages)'],['gbp','Fiche Google (Maps, avis)'],['google','Google Ads'],['meta','Meta Ads (Facebook, Instagram)'],['instagram','Instagram (messages, publications)'],['social','Facebook / TikTok (publications, groupes)'],['lbc','Leboncoin'],['whatsapp','WhatsApp'],['reco','Bouche-à-oreille / ancien client'],['partenaire','Partenaire (lieu, wedding planner, prestataire)'],['entrant','Contact direct (appel ou email, origine inconnue)'],['autre','Autre']];
 const INBOUND=['instagram','meta','google','gbp','site','lbc','whatsapp','entrant'];
-const CH_L=Object.fromEntries(CHANNELS);
+const CH_L=Object.fromEntries(CHANNELS);CH_L.phone='Prospection (recherche, appels, emails)';
 const OFFERS=[['cle','Événement clé en main'],['pack','Pack mariage clé en main'],['traiteur','Traiteur / réception'],['deco','Décoration'],['location','Location de matériel'],['partenariat','Partenariat prestataire']];
 const OFFER_TXT={cle:'une prestation clé en main : traiteur, décoration et matériel gérés par une seule équipe',pack:'nos packs mariage clé en main (traiteur, décoration et matériel)',traiteur:'un service traiteur pour vos réceptions : cocktails, buffets, mignardises, et notre spécialité, la cuisine africaine',deco:'la décoration événementielle sur mesure',location:'la location de matériel (chaises, tables, nappes, vaisselle)',partenariat:'un partenariat : vous recommandez à vos clients une solution clé en main'};
 const EVENT_KINDS=[['','— à préciser —'],['mariage','Mariage'],['anniversaire','Anniversaire'],['bapteme','Baptême'],['babyshower','Baby shower'],['entreprise','Entreprise (réception, séminaire, soirée)'],['cocktail','Cocktail / inauguration'],['autre','Autre']];
@@ -789,7 +789,10 @@ pipeline(){
   return `<div class="kanban">${cols}</div><p class="note">Perdus : ${out} · Oppositions : ${stop}. Passer en « Sales Ready » exige une intention moyenne ou forte, un signal observé et une prochaine étape.</p>`;
 },
 prospects(){
-  return dayBar()+`<div class="bar-tools">
+  const pv=S.pview==='etapes'?'etapes':'liste';
+  const sw=`<div class="stbar" style="margin-bottom:10px"><div class="stseg" role="group" aria-label="Affichage"><button data-act="pview" data-pv="liste" aria-pressed="${pv==='liste'}">Liste</button><button data-act="pview" data-pv="etapes" aria-pressed="${pv==='etapes'}">Par étape</button></div><span class="muted sm">${pv==='liste'?'Toutes les fiches, avec filtres, import et export.':'Les fiches rangées en colonnes, de « À contacter » à « Signé ».'}</span></div>`;
+  if(pv==='etapes')return sw+VIEWS.pipeline();
+  return sw+dayBar()+`<div class="bar-tools">
     <input type="search" id="fq" data-filter="q" placeholder="Rechercher (société, dirigeant, ville, téléphone, email)" value="${esc(S.f.q)}" aria-label="Rechercher">
     <select data-filter="seg" aria-label="Segment"><option value="">Tous segments</option>${SEGMENTS.map(([k,l])=>`<option value="${k}"${S.f.seg===k?' selected':''}>${l}</option>`).join('')}</select>
     <select data-filter="chan" aria-label="Canal"><option value="">Tous canaux</option>${CHANNELS.map(([k,l])=>`<option value="${k}"${S.f.chan===k?' selected':''}>${l}</option>`).join('')}</select>
@@ -1044,7 +1047,7 @@ function channelsHTML(){
     if(c<30)return ['Trop tôt : '+c+' contacté'+(c>1?'s':'')+' sur 30 minimum',''];
     if(!r)return ['À revoir : 0 réponse sur '+c+' contactés','bad'];
     return ['À suivre : '+r+' réponse'+(r>1?'s':'')+', pas encore de devis','warn'];};
-  const rows=CHANNELS.map(([k,l])=>{const P=S.prospects.filter(p=>p.channel===k),f=funnel(P),sp=S.spend[k]||0,ca=sum(P.filter(p=>p.signedDate),p=>p.signedAmount);return {k,l,f,sp,ca,v:verdict(f,sp,ca)}})
+  const rows=CHANNELS.map(([k,l])=>{const P=S.prospects.filter(p=>p.channel===k||(k==='b2b'&&p.channel==='phone')),f=funnel(P),sp=S.spend[k]||0,ca=sum(P.filter(p=>p.signedDate),p=>p.signedAmount);return {k,l,f,sp,ca,v:verdict(f,sp,ca)}})
    .sort((a,b)=>b.ca-a.ca||b.f[0][1]-a.f[0][1]||b.sp-a.sp)
    .map(({k,l,f,sp,ca,v})=>{const cost=(n)=>sp>0&&n>0?fmt(sp/n):'—';
     return `<tr${!f[0][1]&&!sp?' class="dim"':''}><td><b>${l}</b></td><td>${chip(v[0],v[1])}</td><td class="r">${f[0][1]}</td><td class="r">${f[1][1]}</td><td class="r">${f[2][1]}</td><td class="r">${f[3][1]}</td><td class="r">${f[4][1]}</td><td class="r">${f[5][1]}</td><td class="r">${fmt(ca)}</td><td class="r">${caTot?Math.round(100*ca/caTot)+' %':'—'}</td>
@@ -1056,11 +1059,11 @@ function channelsHTML(){
   else{const rate=sg.length/q,panier=sum(sg,p=>p.signedAmount)/sg.length,v=active.length*rate;
     fc=`<p><b>Prévision provisoire</b> (${q} qualifiées, ${sg.length} signée(s)${q<10?' — échantillon faible, forte incertitude':''}) : taux observé ${Math.round(rate*100)} %, panier moyen ${fmt(panier)}.</p>
      <p>${active.length} opportunité(s) actives × ${Math.round(rate*100)} % ≈ <b>${v.toFixed(1)} vente(s)</b> ≈ <b>${fmt(v*panier)}</b>.</p>`}
-  return `<section class="card"><h2>D'où viennent les ventes</h2><p class="note">Le canal d'une fiche = l'endroit d'où vient le client (recherche automatique, Instagram, Leboncoin, Meta, Google, recommandation…). Il se choisit à la création de la fiche ; plus tard, Make le remplira tout seul. Chaque vente est rattachée au canal de sa fiche : c'est ce qui permet de savoir quel canal pousser et lequel couper. Les dépenses se saisissent à la main par canal (budget pub visé : 400 à 500 € par mois).</p>
+  return `<section class="card"><h2>D'où viennent les ventes</h2><p class="note">Le canal d'une fiche = l'endroit d'où vient le client : la prospection (on va vers lui) ou un canal entrant (il vient vers nous : site, Google, Meta, Instagram, Leboncoin, bouche-à-oreille…). Il se choisit à la création de la fiche ; plus tard, Make le remplira tout seul. Chaque vente est rattachée au canal de sa fiche : c'est ce qui permet de savoir quel canal pousser et lequel couper. Les dépenses se saisissent à la main par canal (budget pub visé : 400 à 500 € par mois).</p>
   ${rows.length?`<div class="scroll-x"><table class="t"><thead><tr><th>Canal</th><th>Verdict</th><th class="r">Prospects</th><th class="r">Contactés</th><th class="r">Réponses</th><th class="r">Qualifiés</th><th class="r">Devis</th><th class="r">Ventes</th><th class="r">CA signé</th><th class="r">Part du CA</th><th class="r">Dépense €</th><th class="r">€/qualifié</th><th class="r">€/devis</th><th class="r">€/vente</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>`:'<div class="empty">Aucune donnée par canal pour l\'instant.</div>'}
   <p class="note" style="margin-top:8px">Repères du verdict, à ajuster avec Germaine selon sa marge : au moins 3 € de CA par € dépensé = à pousser ; entre 1 et 3 = à optimiser ; moins de 1 = à couper ou revoir. Un canal sans vente n'est jugé qu'après 30 personnes contactées.</p></section>
   <div class="grid2" style="margin-top:14px"><section class="card"><h3>Prévision</h3>${fc}<p class="note">Formules : ventes = opportunités actives × taux observé ; CA = ventes × panier moyen observé.</p></section>
-  <section class="card"><h3>Sources de leads</h3><ul class="plain"><li>Toutes les sources ont leur canal : email et téléphone de prospection, Instagram, Facebook et TikTok en organique, Meta Ads, Google Ads, fiche Google, site, Leboncoin, WhatsApp, recommandations.</li><li>Une fiche créée avec un canal entrant (Instagram, Meta, Google, site, Leboncoin, WhatsApp) arrive directement au statut « Répondu », à traiter sous 2 h.</li><li>Leads Meta : export CSV du formulaire, puis « Importer CSV ».</li><li>Juge chaque canal sur le coût par devis et par vente, pas sur les clics.</li></ul><p class="note">Pas encore automatique : la remontée directe des formulaires et messages, et l'alerte Telegram à chaque demande de devis, se construisent dans Make (étape suivante).</p></section></div>`;
+  <section class="card"><h3>Comment renseigner le canal</h3><ul class="plain"><li><b>Prospection</b> : les entreprises trouvées par la recherche automatique, puis appelées ou contactées par email. C'est nous qui allons vers elles.</li><li><b>Canaux entrants</b> (site, fiche Google, Google Ads, Meta Ads, Instagram, Leboncoin, WhatsApp, contact direct) : le client vient vers nous. La fiche arrive directement au statut « Répondu », à traiter sous 2 h.</li><li><b>Bouche-à-oreille et partenaires</b> : un client ou un partenaire nous recommande. Demande toujours « Comment nous avez-vous connus ? » au premier échange.</li><li>Leads Meta : export CSV du formulaire, puis « Importer CSV ».</li><li>Juge chaque canal sur le coût par devis et par vente, pas sur les clics.</li></ul><p class="note">Pas encore automatique : la remontée directe des formulaires et messages, et l'alerte Telegram à chaque demande de devis, se construisent dans Make (étape suivante).</p></section></div>`;
 }
 
 
@@ -1235,7 +1238,7 @@ function reDrawer(){if(!S.drawer)return;const d=$('#drawer'),sc=d.querySelector(
 /* ---------- rendu général ---------- */
 function renderTabs(){
   const n=queue().length;
-  const T=[['today','Aujourd\'hui',n],['calls','Appels',callQueue().length||''],['nophone','Sans téléphone',noPhoneList().length||''],['pipeline','Pipeline'],['stats','Statistiques'],['prospects','Prospects'],['quote','Devis'],['materiel','Matériel',matAlerts()||''],['messages','Messages'],['channels','Canaux'],['rules','Règles']];
+  const T=[['today','Aujourd\'hui',n],['calls','Appels',callQueue().length||''],['nophone','Sans téléphone',noPhoneList().length||''],['prospects','Prospects'],['stats','Statistiques'],['quote','Devis'],['materiel','Matériel',matAlerts()||''],['messages','Messages'],['channels','Canaux'],['rules','Règles']];
   $('#tabs').innerHTML=T.map(([k,l,c])=>`<button data-act="tab" data-v="${k}"${S.view===k?' aria-current="page"':''}>${l}${c?`<span class="n">${c}</span>`:''}</button>`).join('');
   const w=$('#who');w.innerHTML=`<option value="">— choisir —</option><option${S.who==='Kissima'?' selected':''}>Kissima</option><option${S.who==='Germaine'?' selected':''}>Germaine</option>`;
 }
@@ -1249,6 +1252,8 @@ function banners(){
   $('#synctext').textContent=S.offline?'Hors ligne':S.err?'Erreur':!S.db?'Connexion…':S.canWrite?'Base partagée':'Lecture seule';
 }
 function render(){
+  if(S.view==='pipeline'){S.view='prospects';S.pview='etapes'}
+  if(S.pview===undefined){try{S.pview=localStorage.getItem('gbi_pview')||'liste'}catch(e){S.pview='liste'}}
   renderTabs();banners();
   main.innerHTML=(VIEWS[S.view]||VIEWS.today)();
   if(S.view==='quote')updateQuote();if(S.view==='messages')updateMsg();if(S.view==='materiel')updateMat();if(S.view==='stats')stDraw();
@@ -1262,6 +1267,7 @@ function refresh(){
 
 /* ---------- événements ---------- */
 const ACT={
+  pview(t){S.pview=t.dataset.pv;try{localStorage.setItem('gbi_pview',S.pview)}catch(e){}render()},
   tab(t){S.view=t.dataset.v;try{localStorage.setItem('gbi_view',S.view)}catch(e){}render();window.scrollTo(0,0)},
   stg(t){stState().g=t.dataset.g;try{localStorage.setItem('gbi_stg',t.dataset.g)}catch(e){}render()},
   stcsv(){stCSV()},
@@ -1290,7 +1296,7 @@ const ACT={
   async lognote(){const D=S.drawer,v=$('#lognote').value.trim();if(!D||!D.id||!v)return;const p=byId(D.id);if(await guard(()=>save(D.id,{log:logAdd(p,v),lastContact:new Date().toISOString()}))){reDrawer()}},
   del(){S.confirmDel=S.drawer.id;reDrawer()},
   async delok(){const id=S.drawer.id;if(await guard(()=>S.db.doc('prospects/'+id).delete())){toast('Fiche supprimée.');closeDrawer()}},
-  msg(t,e){e.stopPropagation();S.m.pid=t.dataset.id;if(S.drawer)closeDrawer();S.view='messages';const p=byId(t.dataset.id);if(p){S.m.tpl=p.stage==='repondu'?'reply':p.stage==='contacte'?'follow':p.channel==='reco'?'network':'first';S.m.offer=p.offer||'partenariat'}render()},
+  msg(t,e){e.stopPropagation();S.m.pid=t.dataset.id;if(S.drawer)closeDrawer();S.view='messages';const p=byId(t.dataset.id);if(p){S.m.tpl=p.stage==='repondu'?'reply':p.stage==='contacte'?'follow':['reco','partenaire'].includes(p.channel)?'network':'first';S.m.offer=p.offer||'partenariat'}render()},
   async callres(t){await callResult(t.dataset.r)},
   callskip(){if(S.call.pid)S.call.skip.push(S.call.pid);S.call.pid='';render()},
   async phonesave(t){const el=document.getElementById('ph-'+t.dataset.id);const v=el?el.value.trim():'';if(String(v).replace(/\D/g,'').length<9){toast('Numéro invalide.',true);return}const p=byId(t.dataset.id);if(await guard(()=>save(p.id,{phone:v,log:logAdd(p,'Téléphone ajouté')})))toast('Numéro enregistré.')},
@@ -1362,7 +1368,7 @@ document.addEventListener('change',e=>{
     if(k==='pid'){const p=byId(t.value);if(p){S.q.kind=p.eventKind||'';if(p.eventDate)S.q.date=p.eventDate;if(p.guests)S.q.guests=String(p.guests)}render();return}
     updateQuote();return}
   if(t.dataset.m){S.m[t.dataset.m]=t.value;
-    if(t.dataset.m==='pid'){const p=byId(t.value);if(p){S.m.tpl=p.stage==='repondu'?'reply':p.stage==='contacte'?'follow':p.channel==='reco'?'network':'first';S.m.offer=p.offer||S.m.offer;render();return}}
+    if(t.dataset.m==='pid'){const p=byId(t.value);if(p){S.m.tpl=p.stage==='repondu'?'reply':p.stage==='contacte'?'follow':['reco','partenaire'].includes(p.channel)?'network':'first';S.m.offer=p.offer||S.m.offer;render();return}}
     updateMsg();return}
   if(t.dataset.spend){const v=num(t.value);guard(()=>S.db.doc('spend/'+t.dataset.spend).set({amount:v}))}
 });
