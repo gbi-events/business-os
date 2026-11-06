@@ -45,3 +45,11 @@ Ce dépôt est modifié par le Claude de Germaine (propriétaire de GBI Events) 
 - Le bouton « Modifier » corrige quantités, dates, prix et revérifie le stock ; l'historique garde la trace de la modification.
 - Rappel de retour : bannière dans l'outil (`retourBanners`) et fichier calendrier `.ics` avec alarme. Un rappel Telegram automatique demande un jeton de bot (secrets `TELEGRAM_*` pas encore créés).
 - « Clients à relancer » : clients ayant déjà loué (téléphone ou email commun), message de fidélité avec 10 % de réduction à copier. Les emails ne vont qu'aux clients ayant donné leur accord (`optinMail`), chaque message contient « répondez STOP » ; `stopMail` retire un client de la liste.
+
+
+## Ne jamais écraser le travail de l'autre
+- Deux Claude modifient ce dépôt (celui de Germaine et celui de Kissima). Des modifications ont déjà été perdues parce qu'un fichier entier a été renvoyé à partir d'une ancienne copie.
+- Avant toute modification, récupère la dernière version de `index.html` sur la branche main. N'utilise jamais une copie gardée en mémoire, dans un dossier local ou dans une conversation précédente.
+- Fais des modifications ciblées (remplacement de morceaux précis). N'envoie jamais le fichier entier reconstitué.
+- Juste avant d'enregistrer, vérifie que le dernier envoi (commit) sur main est bien celui sur lequel tu as travaillé. Sinon, reprends la dernière version et refais ta modification dessus.
+- Après l'envoi, relis le fichier en ligne et vérifie que tes modifications et celles de l'autre y sont : fonctions `presenceInit`, `checkRappels`, `callResult2`, `mnParse`, entre autres.
