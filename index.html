@@ -258,13 +258,6 @@ table.t td.r,table.t th.r{text-align:right;font-variant-numeric:tabular-nums}
 .log time{color:var(--muted);white-space:nowrap}
 #toast{position:fixed;left:50%;bottom:max(18px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:50;max-width:min(520px,calc(100% - 32px));background:var(--ink);color:var(--bg);border-radius:10px;padding:10px 14px;box-shadow:var(--shadow);font-size:13.5px}
 #toast[hidden]{display:none}
-#rappel{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(10,18,15,.55)}
-#rappel[hidden]{display:none}
-#rappel .box{background:var(--surface);color:var(--ink);border:2px solid var(--accent);border-radius:14px;padding:20px;width:min(440px,100%);box-shadow:0 12px 40px rgba(0,0,0,.35)}
-#rappel h2{margin:0 0 6px;font-size:20px}
-#rappel .res{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
-.pres{display:inline-block;background:var(--warn-bg,#fff3cd);color:var(--warn,#7a5a00);border:1px solid var(--warn,#c9a227);border-radius:8px;padding:4px 10px;font-size:13px;margin-bottom:6px}
-.pres:empty{display:none}
 #toast.bad{background:var(--bad);color:#fff}
 .empty{border:1px dashed var(--line);border-radius:12px;padding:22px;text-align:center;color:var(--muted)}
 .empty b{display:block;color:var(--ink);font-family:var(--f-display);font-size:16px;margin-bottom:4px}
@@ -324,7 +317,6 @@ body.authed #login{display:none}
 </div>
 <div id="drawer" hidden></div>
 <div id="toast" role="status" aria-live="polite" hidden></div>
-<div id="rappel" hidden></div>
 
 <script>
 (function(){
@@ -356,7 +348,7 @@ const MAT_BASE=MAT.length;
 const STOCK_FIELDS=[['stChaises','Chaises'],['stTablesRect','Tables rectangulaires'],['stTablesRondes','Tables rondes (8 ou 23 selon le relevé)'],['stNappes','Nappes'],['stKits','Kits de vaisselle'],['stCouvertsOr','Couverts dorés'],['stCouvertsArg','Couverts argentés']];
 
 /* ---------- état ---------- */
-const S={view:'today',prospects:[],reservations:[],r:{client:'',phone:'',email:'',channel:'lbc',start:'',startTime:'',end:'',endTime:'',remind:'120',optin:false,note:'',items:{},remise:'',majPct:'',majEur:''},edit:null,cf:'60',matDay:'',pricing:{...DEF_PRICE},spend:{},loaded:false,db:null,canWrite:true,offline:false,err:'',
+const S={view:'today',prospects:[],reservations:[],r:{client:'',phone:'',email:'',channel:'lbc',start:'',startTime:'',end:'',endTime:'',remind:'120',optin:false,note:'',items:{},remise:'',majPct:'',majEur:'',libre:''},edit:null,cf:'60',matDay:'',pricing:{...DEF_PRICE},spend:{},loaded:false,db:null,canWrite:true,offline:false,err:'',
   day:'',who:'',call:{pid:'',skip:[],lost:'Déjà un traiteur',seg:''},drawer:null,f:{q:'',seg:'',chan:'',stage:'actifs'},showImport:false,showAll:false,confirmDel:null,
   q:{pid:'',date:'',kind:'',guests:'',formule:'none',cocktail:false,vin:false,service:false,fumee:false,plancha:false,deco:'none',decoCustom:'',chaises:'',tablesRect:'',tablesRondes:'',nappes:'',kits:'',couvertsOr:'',couvertsArg:'',validated:false},
   m:{pid:'',tpl:'first',offer:'cle'},dirty:false,downloads:null};
@@ -385,7 +377,7 @@ function toast(msg,bad){const t=$('#toast');t.textContent=msg;t.className=bad?'b
 function errMsg(e){const c=e&&e.code;if(c==='invalid_argument')return "Écriture refusée : ton compte n'est pas autorisé (table membres).";if(c==='quota_exceeded')return 'Base pleine : supprime des fiches.';if(c==='unavailable'||c==='resource_exhausted')return 'Service occupé, réessaie dans un instant.';return 'Enregistrement impossible'+(c?' ('+c+')':'')+'.'}
 
 /* ---------- accès base ---------- */
-async function save(id,patch){patch.updated=new Date().toISOString();if('nextDate' in patch&&!('nextTime' in patch))patch.nextTime='';await S.db.doc('prospects/'+id).update(patch);const q=byId(id);if(q)Object.assign(q,patch)}
+async function save(id,patch){patch.updated=new Date().toISOString();await S.db.doc('prospects/'+id).update(patch)}
 function logAdd(p,txt){const l=(p.log||[]).slice(-59);l.push({t:new Date().toISOString(),by:S.who||'—',x:txt});return l}
 async function guard(fn){if(!S.db){toast("Base indisponible : reconnecte-toi ou recharge la page.",true);return false}try{await fn();return true}catch(e){toast(errMsg(e),true);return false}}
 
@@ -498,10 +490,9 @@ function nophoneHTML(){
   if(!L.length)return `<div class="card"><b>Aucune entreprise sans téléphone.</b></div>`;
   return `<section class="card"><h3>Sans téléphone (${L.length})</h3><div class="muted sm">Ces fiches ne sont pas dans la file d'appels. Cherche le numéro (bouton Chercher), saisis-le, Enregistrer : la fiche passe dans Appels.</div>${L.map(p=>`<div class="nophone"><span><b>${esc(p.name)}</b> <span class="muted">${esc(p.city||p.dept||'')} · ${esc(SEG_L[p.segment]||'')}${p.email?' · email : '+esc(p.email):''}</span></span><input type="tel" id="ph-${esc(p.id)}" placeholder="Téléphone" aria-label="Téléphone de ${esc(p.name)}"><a class="btn sm" target="_blank" rel="noopener" href="https://www.google.com/search?q=${encodeURIComponent((p.name||'')+' '+(p.city||'')+' téléphone')}">Chercher</a><button class="btn sm" data-act="phonesave" data-id="${esc(p.id)}" data-write>Enregistrer</button></div>`).join('')}</section>`;
 }
-function nowHM(){const d=new Date();return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
 function callQueue(allSeg){
   const t=today(),sk=S.call.skip;
-  return S.prospects.filter(p=>!['signe','perdu','stop','repondu','qualifie','devis'].includes(p.stage)&&!p.optout&&hasPhone(p)&&dayOk(p)&&(allSeg||!S.call.seg||p.segment===S.call.seg)&&!sk.includes(p.id)&&(p.stage==='a_contacter'||(p.stage==='contacte'&&p.nextDate&&(p.nextDate<t||(p.nextDate===t&&(!p.nextTime||p.nextTime<=nowHM()))))))
+  return S.prospects.filter(p=>!['signe','perdu','stop','repondu','qualifie','devis'].includes(p.stage)&&!p.optout&&hasPhone(p)&&dayOk(p)&&(allSeg||!S.call.seg||p.segment===S.call.seg)&&!sk.includes(p.id)&&(p.stage==='a_contacter'||(p.stage==='contacte'&&p.nextDate&&p.nextDate<=t)))
     .sort((a,b)=>{const ag=x=>x.segment==='agence'?1:0,da=a.stage==='contacte'?0:1,db=b.stage==='contacte'?0:1;const pr=x=>({A:0,B:1,C:2})[x.priority]??3;
     const sg=x=>/prévu/.test(x.eventType||'')?0:/récent/.test(x.eventType||'')?1:/régulier/.test(x.eventType||'')?2:3;
     const sz=x=>/^(10-19|20-49)$/.test(x.tranche||'')?0:x.tranche==='50-99'?1:2;
@@ -520,7 +511,7 @@ function segBar(){
 function callsHTML(){
   const Q=callQueue(),st=callStats();
   let cur=S.call.pid?byId(S.call.pid):null;
-  if(!cur||!Q.some(x=>x.id===cur.id))cur=Q.find(x=>!occ(x.id))||Q[0]||null;
+  if(!cur||!Q.some(x=>x.id===cur.id))cur=Q[0]||null;
   S.call.pid=cur?cur.id:'';
   const nop=S.prospects.filter(p=>!hasPhone(p)&&!['signe','perdu','stop'].includes(p.stage)&&!p.optout&&p.stage==='a_contacter');
   const stats=`<div class="callstats"><div><b>${st.n}</b><span>appels aujourd'hui</span></div><div><b>${st.joint}</b><span>joints</span></div><div><b>${st.int}</b><span>intéressés</span></div><div><b>${Q.length}</b><span>à appeler</span></div></div>`;
@@ -528,7 +519,6 @@ function callsHTML(){
   if(cur){
     const sc=CALL_SCRIPT[cur.segment]||CALL_SCRIPT.lieu;
     card=`<div class="callcard"><div class="muted sm">${chip(cur.stage==='contacte'?'Rappel':'Premier appel',cur.stage==='contacte'?'warn':'hot')} ${esc(SEG_L[cur.segment]||'')}${cur.city?' · '+esc(cur.city):''}${cur.dept?' ('+esc(cur.dept)+')':''}${cur.touches?' · '+cur.touches+' tentative(s)':''}</div>
-    <div id="callpres">${presHTML(cur.id)}</div>
     <h2>${esc(cur.name)}</h2>
     ${(cur.priority||cur.eventType)?`<div style="margin:4px 0">${cur.priority?chip('Priorité '+cur.priority+(cur.leadScore?' · '+cur.leadScore+'/100':''),cur.priority==='A'?'hot':cur.priority==='B'?'warn':''):''} ${cur.eventType?chip('Événements : '+cur.eventType,'brass'):''}</div>`:''}
     ${briefHTML(cur)}
@@ -549,7 +539,7 @@ function callsHTML(){
       <button class="btn danger" data-act="callres" data-r="stop" data-write>Ne plus appeler</button>
       <button class="btn" data-act="callskip">Passer</button>
     </div>
-    <div class="sm muted" style="margin-top:8px">Rappel le : <input type="date" id="calldate" value="${workday(3)}"> à <input type="time" id="calltime" aria-label="Heure du rappel"> (heure facultative) · Si pas intéressé, motif : <select id="calllost">${LOST_REASONS.map(r=>`<option${S.call.lost===r?' selected':''}>${r}</option>`).join('')}</select></div>
+    <div class="sm muted" style="margin-top:8px">Rappel le : <input type="date" id="calldate" value="${workday(3)}"> · Si pas intéressé, motif : <select id="calllost">${LOST_REASONS.map(r=>`<option${S.call.lost===r?' selected':''}>${r}</option>`).join('')}</select></div>
     <div style="margin-top:8px"><button class="btn sm" data-act="open" data-id="${esc(cur.id)}">Ouvrir la fiche</button></div></div>`;
   }else card=S.call.seg?`<div class="card"><b>Plus personne à appeler dans cette catégorie.</b><div class="muted sm">Choisis une autre catégorie en haut, ou « Toutes les catégories ».</div></div>`:`<div class="card"><b>Plus personne à appeler pour l'instant.</b><div class="muted sm">Importe un CSV de prospects avec téléphone (onglet Prospects) ou ajoute les numéros manquants ci-dessous.</div></div>`;
   const nl='';
@@ -581,22 +571,17 @@ function interestHTML(){
   return `<section class="card" style="margin-top:14px"><h3>Taux d'intérêt par segment</h3><div class="muted sm">Taux = intéressés ÷ joints (sans compter répondeur, pas de réponse, mauvais numéro). En dessous de 10 joints par ligne, le chiffre ne veut encore rien dire : on compare à partir de 30 à 50 joints au total.</div>${out}</section>`;
 }
 async function callResult(r){
-  if(callResult.busy)return;const p=byId(S.call.pid);if(!p)return;
-  callResult.busy=true;try{await callResult2(r,p)}finally{callResult.busy=false}
-}
-async function callResult2(r,p){
+  const p=byId(S.call.pid);if(!p)return;
   const note=($('#callnote')||{}).value||'';const label={int:'Intéressé',rap:'À rappeler',nr:'Pas de réponse',rep:'Répondeur',no:'Pas intéressé',bad:'Mauvais numéro',stop:'Ne plus appeler'}[r];
   const base={touches:(p.touches||0)+1,lastCall:new Date().toISOString(),lastCallResult:label,log:logAdd(p,'Appel : '+label+(note?' — '+note:'')),notes:note?((p.notes?p.notes+'\n':'')+today()+' : '+note):p.notes};
   let ok=false;
   if(r==='nr'||r==='rep'||r==='rap'){
     const d=r==='rap'?($('#calldate')||{}).value||workday(3):workday(r==='nr'?1:2);
-    const hm=r==='rap'?($('#calltime')||{}).value||'':'';
-    if(r==='rap'&&(d<today()||(d===today()&&hm&&hm<=nowHM()))){toast('Cette date et cette heure sont déjà passées : choisis un rappel plus tard.',true);return}
-    ok=await setStage(p,'contacte',{...base,nextDate:d,nextTime:hm,nextAction:r==='rap'?'Rappeler (demandé)':'Rappeler',rappelAlerte:''});
+    ok=await setStage(p,'contacte',{...base,nextDate:d,nextAction:r==='rap'?'Rappeler (demandé)':'Rappeler'});
   }else if(r==='int'){
     ok=await setStage(p,'repondu',{...base,explicit:true,intent:Math.max(2,+p.intent||0),signal:note||'Intéressé au téléphone',nextAction:'Envoyer la proposition ou fixer un rendez-vous',nextDate:today()});
   }else if(r==='no'){
-    ok=await setStage(p,'perdu',{...base,lostReason:($('#calllost')||{}).value||'Autre',nextAction:'',nextDate:'',nextTime:''});
+    ok=await setStage(p,'perdu',{...base,lostReason:($('#calllost')||{}).value||'Autre',nextAction:'',nextDate:''});
   }else if(r==='bad'){
     ok=await guard(()=>save(p.id,{...base,phone:'',notes:(p.notes?p.notes+'\n':'')+today()+' : mauvais numéro'}));
   }else if(r==='stop'){
@@ -842,7 +827,7 @@ function helpHTML(){
       ['En haut : les ventes signées, les devis en cours et le taux de devis transformés en ventes.','« Leads arrivés le » : affiche seulement les entreprises trouvées un jour précis.','À droite : le matériel qui sort dans les 7 jours et les événements signés à venir.']),
     g('Appels','Les entreprises à appeler, une par une, avec tout ce qu\'il faut sous les yeux.',
       ['En haut, choisis la catégorie à appeler (wedding planners, lieux, traiteurs…) : seules ces entreprises s\'affichent.','Lis le résumé et la question à poser, puis appelle le numéro affiché.','Si tu as appris quelque chose, écris-le dans la note.','Clique sur le résultat de l\'appel. L\'entreprise suivante s\'affiche toute seule.'],
-      ['<b>Intéressé</b> : la fiche passe en « Répondu », avec comme prochaine étape d\'envoyer un prix ou de fixer un rendez-vous.','<b>À rappeler</b> : choisis la date et, si tu veux, l\'heure du rappel. À l\'heure prévue, une fenêtre s\'ouvre pour te prévenir et un message part sur Telegram.','<b>Pas de réponse</b> : rappel prévu demain. <b>Répondeur</b> : rappel dans 2 jours.','<b>Pas intéressé</b> : choisis le motif, la fiche passe en « Perdu ».','<b>Mauvais numéro</b> : le numéro est effacé. <b>Ne plus appeler</b> : la fiche passe en « Opposition ».','Si Germaine ou Kissima est déjà sur une fiche, un bandeau jaune l\'indique (« est sur cette fiche en ce moment ») : prends-en une autre pour ne pas appeler deux fois la même entreprise.','<b>Catégorie</b> : le choix est gardé la prochaine fois. Le nombre entre parenthèses est le nombre d\'entreprises encore à appeler. Remets « Toutes les catégories » pour tout revoir.']),
+      ['<b>Intéressé</b> : la fiche passe en « Répondu », avec comme prochaine étape d\'envoyer un prix ou de fixer un rendez-vous.','<b>À rappeler</b> : choisis la date du rappel.','<b>Pas de réponse</b> : rappel prévu demain. <b>Répondeur</b> : rappel dans 2 jours.','<b>Pas intéressé</b> : choisis le motif, la fiche passe en « Perdu ».','<b>Mauvais numéro</b> : le numéro est effacé. <b>Ne plus appeler</b> : la fiche passe en « Opposition ».','<b>Catégorie</b> : le choix est gardé la prochaine fois. Le nombre entre parenthèses est le nombre d\'entreprises encore à appeler. Remets « Toutes les catégories » pour tout revoir.']),
     g('Sans téléphone','Les entreprises dont on n\'a que l\'adresse email.',
       ['Ouvre une fiche, puis prépare un email avec le bouton « Message ».'],
       ['Bientôt, ces emails partiront automatiquement, toujours personnalisés.']),
@@ -854,7 +839,7 @@ function helpHTML(){
       ['Le calcul utilise les prix de l\'onglet Règles.','En dessous de 1 500 €, l\'outil prévient : c\'est le minimum, sauf accord de Germaine.','Une réduction de plus de 30 % affiche une alerte : à valider avec Germaine.','« Bloquer ce matériel » réserve tout de suite le matériel du devis à cette date.','« Copier le texte » pour l\'envoyer au client.']),
     g('Matériel','Savoir ce qui est libre, louer du matériel et suivre les retours.',
       ['Regarde le calendrier : vert = tout est libre, orange = en partie réservé (le chiffre = % encore libre), rouge = complet.','Pour une demande de location : remplis le client, les dates et les quantités. L\'outil vérifie le stock.','Fais avancer la location avec les boutons : Demande → Option (matériel bloqué) → Confirmée → Matériel sorti → Retour.','Au retour, indique les quantités rendues puis « Valider le retour ».','Pour encaisser : sur la location, écris le montant puis « Marquer encaissé ». Il part tout seul dans les statistiques, dans « CA encaissé · location ».','Pour corriger une commande (20 chaises au lieu de 24, une date, un prix) : bouton « Modifier ». Le total se recalcule, et ce qui était déjà encaissé peut être corrigé.','« Ajouter au calendrier » : télécharge un fichier à ouvrir sur le téléphone. Le retrait et le retour y sont avec une alarme avant.','Tout en bas : « Clients à relancer », pour renvoyer un message ou un email à ceux qui ont déjà loué.'],
-      ['Une « Demande » ne bloque rien : seule l\'« Option » réserve le matériel.','Pour une grosse quantité, tu peux ajouter une réduction en % sur la location : le prix se recalcule tout seul.','Une majoration (en % ou en euros) ajoute un montant si le client demande un avantage en plus. Elle s\'ajoute après la réduction.','Donne toujours l\'heure de retrait et de retour : le rappel en dépend. Une bannière jaune apparaît en haut quand le retour approche (1, 2 ou 3 heures avant, au choix), tant que l\'outil est ouvert.','Coche « accepte de recevoir nos offres » seulement si le client est d\'accord : seuls ces clients sont proposés pour les emails de relance. Chaque message contient « répondez STOP ».','Un manquant au retour est retiré du stock automatiquement.','Les retards apparaissent en rouge.','Le stock total se modifie tout en bas de l\'onglet.','Nouveau matériel acheté : en bas de l\'onglet, « Ajouter un matériel » avec son nom et sa quantité. Il apparaît ensuite partout : calendrier, locations, devis et statistiques.']),
+      ['Une « Demande » ne bloque rien : seule l\'« Option » réserve le matériel.','Pour une grosse quantité, tu peux ajouter une réduction en % sur la location : le prix se recalcule tout seul.','Une majoration (en % ou en euros) ajoute un montant si le client demande un avantage en plus. Elle s\'ajoute après la réduction.','Pour une grosse commande ou un prix négocié, écris un « montant libre » : il remplace entièrement le total calculé (le calcul reste affiché à titre indicatif). Vide = calcul automatique.','Donne toujours l\'heure de retrait et de retour : le rappel en dépend. Une bannière jaune apparaît en haut quand le retour approche (1, 2 ou 3 heures avant, au choix), tant que l\'outil est ouvert.','Coche « accepte de recevoir nos offres » seulement si le client est d\'accord : seuls ces clients sont proposés pour les emails de relance. Chaque message contient « répondez STOP ».','Un manquant au retour est retiré du stock automatiquement.','Les retards apparaissent en rouge.','Le stock total se modifie tout en bas de l\'onglet.','Nouveau matériel acheté : en bas de l\'onglet, « Ajouter un matériel » avec son nom et sa quantité. Il apparaît ensuite partout : calendrier, locations, devis et statistiques.']),
     g('Messages','Des messages tout prêts, à copier dans Gmail ou WhatsApp.',
       ['Choisis l\'entreprise et le type de message (premier message, relance, réponse à une demande, proposer un appel, message à une connaissance, demande d\'avis après l\'événement).','Copie le texte, envoie-le depuis Gmail ou WhatsApp.','Reviens cliquer sur « Marquer comme envoyé » : la fiche est mise à jour et la relance est programmée.'],
       ['Rien ne part tout seul depuis cet onglet.','Jamais de prix dans un message écrit.']),
@@ -1256,20 +1241,21 @@ function customMatHTML(){
 }
 
 /* ---------- location : prix, heures, modification, clients ---------- */
-function resCalc(items,remise,majPct,majEur){
+function resCalc(items,remise,majPct,majEur,libre){
   const sub=MAT.reduce((a,[k,,,pk])=>a+num((items||{})[k])*num(S.pricing[pk]),0);
   const rp=Math.min(90,Math.max(0,num(remise))),mp=Math.min(300,Math.max(0,num(majPct))),me=Math.max(0,num(majEur));
   const ra=Math.round(sub*rp)/100,base=sub-ra,ma=Math.round(base*mp)/100;
-  return {sub,rp,ra,mp,ma,me,total:Math.round((base+ma+me)*100)/100};
+  const calc=Math.round((base+ma+me)*100)/100,fixed=libre!=null&&String(libre).trim()!=='';
+  return {sub,rp,ra,mp,ma,me,calc,fixed,total:fixed?Math.max(0,Math.round(num(libre)*100)/100):calc};
 }
-function resTotal(x){return x.total!=null?num(x.total):resCalc(x.items,x.remise,x.majPct,x.majEur).total}
+function resTotal(x){return x.total!=null?num(x.total):resCalc(x.items,x.remise,x.majPct,x.majEur,x.totalLibre).total}
 function calcLines(c,label){
   const extra=c.rp>0||c.mp>0||c.me>0;
   return (extra?`<div class="ev"><span>Sous-total</span><span>${fmt(c.sub)}</span></div>`:'')
    +(c.rp>0?`<div class="ev"><span>Réduction ${c.rp} %</span><span style="color:var(--good)">− ${fmt(c.ra)}</span></div>`:'')
    +(c.mp>0?`<div class="ev"><span>Majoration ${c.mp} %</span><span style="color:var(--warn)">+ ${fmt(c.ma)}</span></div>`:'')
    +(c.me>0?`<div class="ev"><span>Supplément</span><span style="color:var(--warn)">+ ${fmt(c.me)}</span></div>`:'')
-   +`<div class="total"><span>${label||'Location (indicatif, hors livraison)'}${extra?', après ajustements':''}</span><b>${fmt(c.total)}</b></div>`;
+   +(c.fixed?`<div class="ev"><span>Montant calculé (indicatif)</span><span>${fmt(c.calc)}</span></div><div class="total"><span>Montant libre fixé par toi</span><b>${fmt(c.total)}</b></div>`:`<div class="total"><span>${label||'Location (indicatif, hors livraison)'}${extra?', après ajustements':''}</span><b>${fmt(c.total)}</b></div>`);
 }
 function hm(t){return t?String(t).slice(0,5).replace(':','h'):''}
 function resWhen(x){return fdateFull(x.start)+(x.startTime?' '+hm(x.startTime):'')+' → '+fdateFull(x.end||x.start)+(x.endTime?' '+hm(x.endTime):'')}
@@ -1285,7 +1271,7 @@ function icsFor(x){
   L.push(...ev(x.id+'-retour','RETOUR matériel : '+(x.client||''),x.end||x.start,x.endTime||'18:00',rm));
   L.push('END:VCALENDAR');return L.join('\r\n');
 }
-function editInit(x){return {id:x.id,client:x.client||'',phone:x.phone||'',email:x.email||'',start:x.start||'',startTime:x.startTime||'',end:x.end||x.start||'',endTime:x.endTime||'',remind:String(x.remind||'120'),optin:!!x.optinMail,note:x.note||'',remise:x.remise||'',majPct:x.majPct||'',majEur:x.majEur||'',paidAmount:x.paid?String(x.paidAmount==null?resTotal(x):x.paidAmount):'',items:Object.fromEntries(MAT.filter(([k])=>num((x.items||{})[k])>0).map(([k])=>[k,String(num(x.items[k]))]))}}
+function editInit(x){return {id:x.id,client:x.client||'',phone:x.phone||'',email:x.email||'',start:x.start||'',startTime:x.startTime||'',end:x.end||x.start||'',endTime:x.endTime||'',remind:String(x.remind||'120'),optin:!!x.optinMail,note:x.note||'',remise:x.remise||'',majPct:x.majPct||'',majEur:x.majEur||'',libre:x.totalLibre!=null&&x.totalLibre!==''?String(x.totalLibre):'',paidAmount:x.paid?String(x.paidAmount==null?resTotal(x):x.paidAmount):'',items:Object.fromEntries(MAT.filter(([k])=>num((x.items||{})[k])>0).map(([k])=>[k,String(num(x.items[k]))]))}}
 function editHTML(x){
   const e=S.edit,inp='background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 9px;color:var(--ink)';
   const f=(l,k,t,ph)=>`<label class="f"><span>${l}</span><input data-e="${k}" type="${t||'text'}" value="${esc(e[k]||'')}"${ph?` placeholder="${ph}"`:''}></label>`;
@@ -1295,7 +1281,7 @@ function editHTML(x){
     ${f('Date de retrait','start','date')}${f('Heure de retrait','startTime','time')}${f('Date de retour','end','date')}${f('Heure de retour','endTime','time')}
     <label class="f"><span>Rappel avant le retour</span><select data-e="remind"><option value="60"${e.remind==='60'?' selected':''}>1 heure avant</option><option value="120"${e.remind==='120'?' selected':''}>2 heures avant</option><option value="180"${e.remind==='180'?' selected':''}>3 heures avant</option></select></label></div>
    <div class="sec-label">Quantités (celles qui sont chez le client)</div><div class="fg">${MAT.map(([k,l])=>`<label class="f"><span>${l}</span><input data-ei="${k}" inputmode="numeric" value="${esc(e.items[k]||'')}"></label>`).join('')}</div>
-   <div class="fg w2" style="margin-top:8px">${f('Réduction (%)','remise','text','0')}${f('Majoration (%)','majPct','text','0')}${f('Supplément (€)','majEur','text','0')}${x.paid?f('Montant encaissé (€)','paidAmount','text'):''}</div>
+   <div class="fg w2" style="margin-top:8px">${f('Réduction (%)','remise','text','0')}${f('Majoration (%)','majPct','text','0')}${f('Supplément (€)','majEur','text','0')}${f('Montant libre (€)','libre','text','vide = calcul automatique')}${x.paid?f('Montant encaissé (€)','paidAmount','text'):''}</div>
    <label class="f" style="margin-top:8px"><span>Note</span><input data-e="note" value="${esc(e.note)}"></label>
    <label class="sm" style="display:flex;gap:6px;align-items:center;margin-top:8px"><input type="checkbox" data-e="optin"${e.optin?' checked':''}> Le client accepte de recevoir nos offres (il peut dire STOP à tout moment)</label>
    <div id="eout" style="margin-top:8px"></div>
@@ -1304,7 +1290,7 @@ function editHTML(x){
 function updateEdit(){
   const o=document.getElementById('eout');if(!o||!S.edit)return;const e=S.edit,x=S.reservations.find(y=>y.id===e.id);if(!x)return;
   const items={};MAT.forEach(([k])=>{const n=num(e.items[k]);if(n>0)items[k]=n});
-  const c=resCalc(items,e.remise,e.majPct,e.majEur);let w='';
+  const c=resCalc(items,e.remise,e.majPct,e.majEur,e.libre);let w='';
   if(BLOCKING.includes(x.status)&&e.start){const m=matCheck(items,e.start,e.end||e.start,x.id);if(m.miss.length)w=`<div class="warns"><div class="bad">Plus assez de stock sur cette période : ${m.miss.map(y=>y.l.toLowerCase()+' (manque '+(y.n-Math.max(0,y.a.free))+')').join(', ')}.</div></div>`}
   const old=resTotal(x),diff=Math.round((c.total-old)*100)/100;
   o.innerHTML=calcLines(c,'Nouveau total')+`<div class="muted sm">Avant : ${fmt(old)}${diff?' · écart '+(diff>0?'+':'−')+' '+fmt(Math.abs(diff)):''}${x.paid?' · déjà encaissé : '+fmt(num(x.paidAmount)):''}</div>`+w;
@@ -1315,7 +1301,7 @@ function resRow(x){
   const tot=resTotal(x),can=['confirmee','sortie','rendue'].includes(x.status);
   const pay=x.paid?`<span class="chip good">Encaissé ${fmt(num(x.paidAmount))}${x.paidDate?' le '+fdateFull(x.paidDate):''}</span> <button class="btn sm" data-act="runpay" data-id="${esc(x.id)}" data-write>Annuler l'encaissement</button>`
     :can?`<label class="sm muted">Encaissé (€) <input id="pay-${esc(x.id)}" inputmode="decimal" value="${tot}" style="width:80px;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:3px 6px"></label> <button class="btn sm primary" data-act="rpay" data-id="${esc(x.id)}" data-write>Marquer encaissé</button>`:'';
-  const extra=`<div class="sm" style="margin:6px 0 2px"><b>${esc(resWhen(x))}</b>${x.email?' · '+esc(x.email):''} · Total <b>${fmt(tot)}</b>${x.remise?` · réduction ${esc(x.remise)} %`:''}${x.majPct?` · majoration ${esc(x.majPct)} %`:''}${x.majEur?` · supplément ${fmt(num(x.majEur))}`:''}${x.endTime&&x.remind?` · rappel ${num(x.remind)/60} h avant le retour`:''}</div>
+  const extra=`<div class="sm" style="margin:6px 0 2px"><b>${esc(resWhen(x))}</b>${x.email?' · '+esc(x.email):''} · Total <b>${fmt(tot)}</b>${x.remise?` · réduction ${esc(x.remise)} %`:''}${x.majPct?` · majoration ${esc(x.majPct)} %`:''}${x.majEur?` · supplément ${fmt(num(x.majEur))}`:''}${x.totalLibre!=null&&x.totalLibre!==''?' · <b>montant libre</b>':''}${x.endTime&&x.remind?` · rappel ${num(x.remind)/60} h avant le retour`:''}</div>
    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">${x.status!=='annulee'?`<button class="btn sm" data-act="redit" data-id="${esc(x.id)}" data-write>Modifier</button>`:''}<button class="btn sm" data-act="rics" data-id="${esc(x.id)}">Ajouter au calendrier (avec rappel)</button>${pay}</div>`;
   return h.replace(/<\/div>\s*$/,extra+'</div>');
 }
@@ -1387,6 +1373,7 @@ function matHTML(){
    <div class="remrow"><label class="f"><span>Réduction sur la location (%)</span><input data-r="remise" inputmode="decimal" value="${esc(r.remise||'')}" placeholder="0"></label><span class="remq">${[5,10,15,20].map(v=>`<button type="button" class="btn sm${num(r.remise)===v?' primary':''}" data-act="rremise" data-v="${v}">${v} %</button>`).join('')}<button type="button" class="btn sm" data-act="rremise" data-v="0">Aucune</button></span></div>
    <div class="remrow"><label class="f"><span>Majoration sur la location (%)</span><input data-r="majPct" inputmode="decimal" value="${esc(r.majPct||'')}" placeholder="0"></label><span class="remq">${[5,10,15,20].map(v=>`<button type="button" class="btn sm${num(r.majPct)===v?' primary':''}" data-act="rmaj" data-v="${v}">+ ${v} %</button>`).join('')}<button type="button" class="btn sm" data-act="rmaj" data-v="0">Aucune</button></span>
     <label class="f"><span>ou supplément en euros (€)</span><input data-r="majEur" inputmode="decimal" value="${esc(r.majEur||'')}" placeholder="0"></label></div>
+   <div class="remrow"><label class="f"><span>Montant libre (€) : remplace le total calculé</span><input data-r="libre" inputmode="decimal" value="${esc(r.libre||'')}" placeholder="vide = calcul automatique"></label><span class="remq sm muted">Pour une grosse commande ou un prix négocié : écris le montant final, il remplace le calcul.</span></div>
    <label class="f" style="margin-top:8px"><span>Note (adresse, livraison, caution…)</span><input data-r="note" value="${esc(r.note)}"></label>
    <div id="rout" style="margin-top:10px"></div></section>
   <aside><section class="card"><h3>Disponibilité sur une période</h3>
@@ -1412,7 +1399,7 @@ function updateMat(){
     :c.unk.length?`<div>Stock inconnu pour ${c.unk.map(x=>x.l.toLowerCase()).join(', ')} : vérifie à la main avant de confirmer.</div>`
     :`<div class="ok">Tout est disponible sur la période.</div>`;
   out.innerHTML=`<div class="scroll-x"><table class="t"><thead><tr><th>Matériel</th><th class="r">Demandé</th><th class="r">Libre</th><th class="r">Prix</th></tr></thead><tbody>${c.L.map(x=>`<tr><td>${esc(x.l)}</td><td class="r">${x.n}</td><td class="r" style="color:${x.a&&!x.ok?'var(--bad)':'inherit'}">${x.a?Math.max(0,x.a.free):'?'}</td><td class="r">${fmt(x.price)}</td></tr>`).join('')}</tbody></table></div>
-   ${calcLines(resCalc(r.items,r.remise,r.majPct,r.majEur))}
+   ${calcLines(resCalc(r.items,r.remise,r.majPct,r.majEur,r.libre))}
    <div class="warns">${v}</div>
    <p style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="rsave" data-st="demande" data-write>Enregistrer la demande</button><button class="btn primary" data-act="rsave" data-st="option" data-write${c.miss.length||c.unk.length?' disabled':''}>Bloquer le matériel (option)</button></p>`;
 }
@@ -1458,7 +1445,7 @@ function drawerHTML(){
   const hist=(p.log||[]).slice(-15).reverse();
   const cf=p.eventDate?conflicts(p.eventDate,p.id,['signe']):[];
   return `<div class="panel" role="dialog" aria-label="Fiche prospect">
-  <div class="ph"><div><div id="drawpres">${D.id?presHTML(D.id):''}</div><h2>${D.id?esc(p.name):'Nouveau prospect'}</h2>${D.id?`<span class="muted sm">${esc(SEG_L[p.segment]||'')} · ${esc(CH_L[p.channel]||'')} · potentiel ${pot(p)}/100 (provisoire)</span>`:''}</div><button class="btn sm" data-act="close">Fermer</button></div>
+  <div class="ph"><div><h2>${D.id?esc(p.name):'Nouveau prospect'}</h2>${D.id?`<span class="muted sm">${esc(SEG_L[p.segment]||'')} · ${esc(CH_L[p.channel]||'')} · potentiel ${pot(p)}/100 (provisoire)</span>`:''}</div><button class="btn sm" data-act="close">Fermer</button></div>
   ${D.id?`<div class="stages" role="group" aria-label="Étape">${STAGES.map(([k,l])=>`<button data-act="stage" data-st="${k}" data-write class="${p.stage===k?'on':''}">${l}</button>`).join('')}</div>`:''}
   ${D.id&&briefOf(p)?`<div class="sec-label">Résumé</div>${briefHTML(p)}<div class="sm muted">Trouvé le ${fdateFull(leadDay(p))}</div>`:''}
   <div class="sec-label">Coordonnées</div>
@@ -1470,7 +1457,6 @@ function drawerHTML(){
   <div class="fg" style="margin-top:8px">${SCORE.map(([k,l,w])=>`<label class="ck"><input type="checkbox" data-sc="${k}"${p.score&&p.score[k]?' checked':''}> ${l} (+${w})</label>`).join('')}</div>
   <label class="ck" style="margin-top:8px"><input type="checkbox" data-f="explicit"${p.explicit?' checked':''}> Demande explicite du prospect (obligatoire pour un particulier)</label>
   <div class="fg w2" style="margin-top:8px">${I('Prochaine action','nextAction')}${I('Date de la prochaine action','nextDate','date')}</div>
-  <div class="fg w2" style="margin-top:8px">${I('Heure du rappel (facultatif)','nextTime','time')}</div>
   <div class="sec-label">Événement et montants</div>
   <div class="fg">${I("Date de l'événement",'eventDate','date')}${I('Invités','guests','text','inputmode="numeric"')}${SEL('Budget','budget',[['inconnu','Inconnu'],['estimé','Estimé'],['confirmé','Confirmé']])}${I('Montant du budget (€)','budgetVal','text','inputmode="decimal"')}
    ${I('Devis (€)','quoteAmount','text','inputmode="decimal"')}${I('Signé (€)','signedAmount','text','inputmode="decimal"')}${I('Encaissé (€)','cashedAmount','text','inputmode="decimal"')}${I('Motif de perte','lostReason')}</div>
@@ -1494,8 +1480,8 @@ function collect(){
   document.querySelectorAll('#drawer [data-sc]').forEach(el=>{P.score[el.dataset.sc]=el.checked});
   return P;
 }
-function openDrawer(id){S.drawer={id:id||null};S.confirmDel=null;const d=$('#drawer');d.innerHTML=drawerHTML();d.hidden=false;presTrack()}
-function closeDrawer(){S.drawer=null;S.confirmDel=null;const d=$('#drawer');d.hidden=true;d.innerHTML='';presTrack();if(S.dirty)refresh()}
+function openDrawer(id){S.drawer={id:id||null};S.confirmDel=null;const d=$('#drawer');d.innerHTML=drawerHTML();d.hidden=false}
+function closeDrawer(){S.drawer=null;S.confirmDel=null;const d=$('#drawer');d.hidden=true;d.innerHTML='';if(S.dirty)refresh()}
 function reDrawer(){if(!S.drawer)return;const d=$('#drawer'),sc=d.querySelector('.panel')?d.querySelector('.panel').scrollTop:0;d.innerHTML=drawerHTML();const pn=d.querySelector('.panel');if(pn)pn.scrollTop=sc}
 
 /* ---------- rendu général ---------- */
@@ -1521,7 +1507,7 @@ function render(){
   renderTabs();banners();
   main.innerHTML=(VIEWS[S.view]||VIEWS.today)();
   if(S.view==='quote')updateQuote();if(S.view==='messages')updateMsg();if(S.view==='materiel'){updateMat();if(S.edit)updateEdit()}if(S.view==='stats')stDraw();
-  $('#app').classList.toggle('ro',!S.canWrite);S.dirty=false;presTrack();
+  $('#app').classList.toggle('ro',!S.canWrite);S.dirty=false;
 }
 setInterval(()=>{try{if(S.db)banners()}catch(e){}},60000);
 function refresh(){
@@ -1529,50 +1515,6 @@ function refresh(){
   if(a&&main.contains(a)&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)){S.dirty=true;renderTabs();return}
   render();
 }
-
-
-/* ---------- qui est sur quelle fiche (présence en direct) ---------- */
-function occ(pid){const a=(S.others||{})[pid];return a&&a.length?[...new Set(a)]:null}
-function presHTML(pid){const a=occ(pid);return a?`<span class="pres">⚠ ${esc(a.join(' et '))} ${a.length>1?'sont':'est'} sur cette fiche en ce moment</span>`:''}
-function updatePresenceUI(){const c=$('#callpres');if(c&&S.call.pid)c.innerHTML=presHTML(S.call.pid);const d=$('#drawpres');if(d&&S.drawer&&S.drawer.id)d.innerHTML=presHTML(S.drawer.id)}
-function presTrack(){
-  if(!S.pres||!S.presReady)return;
-  const pid=S.drawer&&S.drawer.id?S.drawer.id:(S.view==='calls'&&S.call.pid?S.call.pid:'');
-  const k=pid+'|'+(S.who||'');if(k===S.presLast)return;S.presLast=k;
-  try{S.pres.track({pid,who:S.who||'Quelqu\'un'})}catch(e){}
-}
-function presenceInit(){
-  const sb=window.gbiSupabase;if(!sb||S.pres)return;
-  try{
-    S.presKey='u'+Math.random().toString(36).slice(2,10);
-    const ch=sb.channel('gbi-presence',{config:{presence:{key:S.presKey}}});
-    ch.on('presence',{event:'sync'},()=>{
-      const st=ch.presenceState(),m={};
-      Object.entries(st).forEach(([k,arr])=>{if(k===S.presKey)return;arr.forEach(x=>{if(x&&x.pid)(m[x.pid]=m[x.pid]||[]).push(x.who||'Quelqu\'un')})});
-      S.others=m;updatePresenceUI();
-    }).subscribe(s=>{if(s==='SUBSCRIBED'){S.presReady=true;S.presLast='';presTrack()}});
-    S.pres=ch;
-  }catch(e){}
-}
-
-/* ---------- rappels : fenêtre à l'heure choisie ---------- */
-function rappelsDus(){const t=today(),h=nowHM();return S.prospects.filter(p=>p.stage==='contacte'&&!p.optout&&p.nextDate===t&&p.nextTime&&p.nextTime<=h&&/^Rappeler \(demandé\)/.test(p.nextAction||''))}
-function rapSeen(){try{return JSON.parse(localStorage.getItem('gbi_rap')||'{}')}catch(e){return {}}}
-function rapMark(p,until){const m=rapSeen();m[p.id]={k:p.nextDate+' '+p.nextTime,u:until||0};try{localStorage.setItem('gbi_rap',JSON.stringify(m))}catch(e){}}
-function checkRappels(){
-  if(!S.loaded||!S.prospects||$('#rappel').hidden===false)return;
-  const seen=rapSeen(),now=Date.now();
-  const p=rappelsDus().find(x=>{const v=seen[x.id];return !v||v.k!==x.nextDate+' '+x.nextTime||(v.u&&v.u<=now)});
-  if(!p)return;
-  S.rap=p.id;
-  $('#rappel').innerHTML=`<div class="box" role="alertdialog" aria-label="Rappel à faire"><div class="muted sm">${chip('Rappel à faire','hot')} prévu à ${esc(p.nextTime)}</div><h2>${esc(p.name)}</h2>
-    ${p.phone?`<a class="callnum" href="tel:${esc(String(p.phone).replace(/[^+\d]/g,''))}">${esc(fmtPhone(p.phone))}</a>`:'<div class="muted">Pas de numéro sur la fiche.</div>'}
-    ${presHTML(p.id)}
-    ${p.notes?`<div class="muted sm" style="white-space:pre-wrap;margin-top:8px">${esc(String(p.notes).slice(-300))}</div>`:''}
-    <div class="res"><button class="btn primary" data-act="rapcall">Appeler maintenant</button><button class="btn" data-act="rapopen">Ouvrir la fiche</button><button class="btn" data-act="rapsnooze">Dans 15 minutes</button><button class="btn" data-act="rapclose">Fermer</button></div></div>`;
-  $('#rappel').hidden=false;
-}
-function rapHide(){$('#rappel').hidden=true;$('#rappel').innerHTML=''}
 
 /* ---------- événements ---------- */
 const ACT={
@@ -1627,10 +1569,6 @@ const ACT={
   async delok(){const id=S.drawer.id;if(await guard(()=>S.db.doc('prospects/'+id).delete())){toast('Fiche supprimée.');closeDrawer()}},
   msg(t,e){e.stopPropagation();S.m.pid=t.dataset.id;if(S.drawer)closeDrawer();S.view='messages';const p=byId(t.dataset.id);if(p){S.m.tpl=p.stage==='repondu'?'reply':p.stage==='contacte'?'follow':['reco','partenaire'].includes(p.channel)?'network':'first';S.m.offer=p.offer||'partenariat'}render()},
   async callres(t){await callResult(t.dataset.r)},
-  rapcall(){const p=byId(S.rap);rapMark(p||{id:S.rap,nextDate:'',nextTime:''});rapHide();if(!p)return;if(S.drawer)closeDrawer();S.call.pid=p.id;S.view='calls';try{localStorage.setItem('gbi_view','calls')}catch(e){}render();window.scrollTo(0,0)},
-  rapopen(){const p=byId(S.rap);if(p){rapMark(p);rapHide();openDrawer(p.id)}else rapHide()},
-  rapsnooze(){const p=byId(S.rap);if(p)rapMark(p,Date.now()+15*60000);rapHide()},
-  rapclose(){const p=byId(S.rap);if(p)rapMark(p);rapHide()},
   callskip(){if(S.call.pid)S.call.skip.push(S.call.pid);S.call.pid='';render()},
   async phonesave(t){const el=document.getElementById('ph-'+t.dataset.id);const v=el?el.value.trim():'';if(String(v).replace(/\D/g,'').length<9){toast('Numéro invalide.',true);return}const p=byId(t.dataset.id);if(await guard(()=>save(p.id,{phone:v,log:logAdd(p,'Téléphone ajouté')})))toast('Numéro enregistré.')},
   quoteopen(t){const p=byId(t.dataset.id);S.q.pid=t.dataset.id;if(p){S.q.kind=p.eventKind||'';if(p.eventDate)S.q.date=p.eventDate;if(p.guests)S.q.guests=String(p.guests)}closeDrawer();S.view='quote';render()},
@@ -1644,9 +1582,9 @@ const ACT={
     const items={};MAT.forEach(([k])=>{const n=num(r.items[k]);if(n>0)items[k]=n});
     if(!Object.keys(items).length){toast('Ajoute au moins une quantité.',true);return}
     if(st==='option'){const c=matCheck(items,r.start,r.end||r.start,null);if(c.miss.length||c.unk.length){toast('Stock insuffisant ou inconnu : impossible de bloquer.',true);return}}
-    const c=resCalc(items,r.remise,r.majPct,r.majEur);
-    if(await addReservation({client:r.client.trim(),phone:r.phone.trim(),email:String(r.email||'').trim(),channel:r.channel,start:r.start,startTime:r.startTime,end:r.end||r.start,endTime:r.endTime,remind:r.remind||'120',optinMail:!!r.optin,note:r.note.trim(),items,status:st,remise:c.rp||0,majPct:c.mp||0,majEur:c.me||0,subtotal:c.sub,total:c.total})){
-      toast(st==='option'?'Matériel bloqué.':'Demande enregistrée (rien n\'est bloqué).');S.r={client:'',phone:'',email:'',channel:r.channel,start:'',startTime:'',end:'',endTime:'',remind:r.remind||'120',optin:false,note:'',items:{},remise:'',majPct:'',majEur:''};render()}
+    const c=resCalc(items,r.remise,r.majPct,r.majEur,r.libre);
+    if(await addReservation({client:r.client.trim(),phone:r.phone.trim(),email:String(r.email||'').trim(),channel:r.channel,start:r.start,startTime:r.startTime,end:r.end||r.start,endTime:r.endTime,remind:r.remind||'120',optinMail:!!r.optin,note:r.note.trim(),items,status:st,remise:c.rp||0,majPct:c.mp||0,majEur:c.me||0,totalLibre:c.fixed?c.total:'',subtotal:c.sub,total:c.total})){
+      toast(st==='option'?'Matériel bloqué.':'Demande enregistrée (rien n\'est bloqué).');S.r={client:'',phone:'',email:'',channel:r.channel,start:'',startTime:'',end:'',endTime:'',remind:r.remind||'120',optin:false,note:'',items:{},remise:'',majPct:'',majEur:'',libre:''};render()}
   },
   rmaj(t){S.r.majPct=t.dataset.v==='0'?'':t.dataset.v;render()},
   redit(t){const x=S.reservations.find(y=>y.id===t.dataset.id);if(!x)return;S.edit=editInit(x);render();updateEdit()},
@@ -1660,9 +1598,9 @@ const ACT={
     const items={};MAT.forEach(([k])=>{const n=num(e.items[k]);if(n>0)items[k]=n});
     if(!Object.keys(items).length){toast('Ajoute au moins une quantité.',true);return}
     if(BLOCKING.includes(x.status)){const m=matCheck(items,e.start,e.end||e.start,x.id);if(m.miss.length){toast('Plus assez de stock : '+m.miss.map(y=>y.l.toLowerCase()).join(', ')+'.',true);return}}
-    const c=resCalc(items,e.remise,e.majPct,e.majEur),old=resTotal(x),now=new Date().toISOString();
+    const c=resCalc(items,e.remise,e.majPct,e.majEur,e.libre),old=resTotal(x),now=new Date().toISOString();
     const diffs=MAT.filter(([k])=>num((x.items||{})[k])!==num(items[k])).map(([k,l])=>l.toLowerCase()+' '+num((x.items||{})[k])+' → '+num(items[k]));
-    const u={client:String(e.client).trim(),phone:String(e.phone||'').trim(),email:String(e.email||'').trim(),start:e.start,startTime:e.startTime,end:e.end||e.start,endTime:e.endTime,remind:e.remind||'120',optinMail:!!e.optin,note:String(e.note||'').trim(),items,remise:c.rp||0,majPct:c.mp||0,majEur:c.me||0,subtotal:c.sub,total:c.total,updated:now,
+    const u={client:String(e.client).trim(),phone:String(e.phone||'').trim(),email:String(e.email||'').trim(),start:e.start,startTime:e.startTime,end:e.end||e.start,endTime:e.endTime,remind:e.remind||'120',optinMail:!!e.optin,note:String(e.note||'').trim(),items,remise:c.rp||0,majPct:c.mp||0,majEur:c.me||0,totalLibre:c.fixed?c.total:'',subtotal:c.sub,total:c.total,updated:now,
       log:[...(x.log||[]).slice(-29),{t:now,by:S.who||'—',x:'Modifiée'+(diffs.length?' : '+diffs.join(', '):'')+(c.total!==old?' · total '+fmt(old)+' → '+fmt(c.total):'')}]};
     if(x.paid&&e.paidAmount!==''){u.paidAmount=num(e.paidAmount)}
     if(await guard(()=>S.db.doc('reservations/'+x.id).update(u))){S.edit=null;toast('Réservation modifiée'+(c.total!==old?' : nouveau total '+fmt(c.total):'')+'.');render()}
@@ -1741,11 +1679,11 @@ document.addEventListener('input',e=>{
 });
 document.addEventListener('change',e=>{
   const t=e.target;
-  if(t.id==='who'){S.who=t.value;try{localStorage.setItem('gbi_who',S.who)}catch(x){}S.presLast='';presTrack();if(S.view==='messages')updateMsg();return}
+  if(t.id==='who'){S.who=t.value;try{localStorage.setItem('gbi_who',S.who)}catch(x){}if(S.view==='messages')updateMsg();return}
   if(t.dataset.stf){stState()[t.dataset.stf]=t.value;render();return}
   if(t.dataset.cf){S.cf=t.value;render();return}
   if(t.dataset.e){S.edit[t.dataset.e]=t.type==='checkbox'?t.checked:t.value;updateEdit();return}
-  if(t.dataset.r){S.r[t.dataset.r]=t.type==='checkbox'?t.checked:t.value;updateMat();return}
+  if(t.dataset.r){S.r[t.dataset.r]=t.type==='checkbox'?t.checked:t.value;if(t.tagName==='SELECT'||t.type==='checkbox')updateMat();return}
   if(t.dataset.matday){S.matDay=t.value;if(S.matEnd&&S.matEnd<t.value)S.matEnd=t.value;render();return}
   if(t.dataset.matend){S.matEnd=t.value;render();return}
   if(t.dataset.matcal){S.matCal=t.value||today();render();return}
@@ -1781,7 +1719,7 @@ async function boot(){
     db.doc('settings/pricing').onSnapshot(s=>{const d=s.exists?s.data():{};S.pricing={...DEF_PRICE,...d};syncMat();refresh()},()=>{});
     db.collection('reservations').limit(1000).onSnapshot(snap=>{S.reservations=snap.docs.map(d=>({id:d.id,...d.data()}));refresh()},()=>{});
     db.collection('spend').onSnapshot(snap=>{S.spend={};snap.docs.forEach(d=>{S.spend[d.id]=Number(d.data().amount)||0});refresh()},()=>{});
-    render();presenceInit();checkRappels();setInterval(checkRappels,30000);
+    render();
   }catch(e){S.err=(e&&e.code)||'inconnue';S.loaded=true;render()}
 }
 window.__gbiBoot=boot;

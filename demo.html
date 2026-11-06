@@ -349,7 +349,7 @@ const MAT_BASE=MAT.length;
 const STOCK_FIELDS=[['stChaises','Chaises'],['stTablesRect','Tables rectangulaires'],['stTablesRondes','Tables rondes (8 ou 23 selon le relevé)'],['stNappes','Nappes'],['stKits','Kits de vaisselle'],['stCouvertsOr','Couverts dorés'],['stCouvertsArg','Couverts argentés']];
 
 /* ---------- état ---------- */
-const S={view:'today',prospects:[],reservations:[],r:{client:'',phone:'',email:'',channel:'lbc',start:'',startTime:'',end:'',endTime:'',remind:'120',optin:false,note:'',items:{},remise:'',majPct:'',majEur:''},edit:null,cf:'60',matDay:'',pricing:{...DEF_PRICE},spend:{},loaded:false,db:null,canWrite:true,offline:false,err:'',
+const S={view:'today',prospects:[],reservations:[],r:{client:'',phone:'',email:'',channel:'lbc',start:'',startTime:'',end:'',endTime:'',remind:'120',optin:false,note:'',items:{},remise:'',majPct:'',majEur:'',libre:''},edit:null,cf:'60',matDay:'',pricing:{...DEF_PRICE},spend:{},loaded:false,db:null,canWrite:true,offline:false,err:'',
   day:'',who:'',call:{pid:'',skip:[],lost:'Déjà un traiteur',seg:''},drawer:null,f:{q:'',seg:'',chan:'',stage:'actifs'},showImport:false,showAll:false,confirmDel:null,
   q:{pid:'',date:'',kind:'',guests:'',formule:'none',cocktail:false,vin:false,service:false,fumee:false,plancha:false,deco:'none',decoCustom:'',chaises:'',tablesRect:'',tablesRondes:'',nappes:'',kits:'',couvertsOr:'',couvertsArg:'',validated:false},
   m:{pid:'',tpl:'first',offer:'cle'},dirty:false,downloads:null};
@@ -840,7 +840,7 @@ function helpHTML(){
       ['Le calcul utilise les prix de l\'onglet Règles.','En dessous de 1 500 €, l\'outil prévient : c\'est le minimum, sauf accord de Germaine.','Une réduction de plus de 30 % affiche une alerte : à valider avec Germaine.','« Bloquer ce matériel » réserve tout de suite le matériel du devis à cette date.','« Copier le texte » pour l\'envoyer au client.']),
     g('Matériel','Savoir ce qui est libre, louer du matériel et suivre les retours.',
       ['Regarde le calendrier : vert = tout est libre, orange = en partie réservé (le chiffre = % encore libre), rouge = complet.','Pour une demande de location : remplis le client, les dates et les quantités. L\'outil vérifie le stock.','Fais avancer la location avec les boutons : Demande → Option (matériel bloqué) → Confirmée → Matériel sorti → Retour.','Au retour, indique les quantités rendues puis « Valider le retour ».','Pour encaisser : sur la location, écris le montant puis « Marquer encaissé ». Il part tout seul dans les statistiques, dans « CA encaissé · location ».','Pour corriger une commande (20 chaises au lieu de 24, une date, un prix) : bouton « Modifier ». Le total se recalcule, et ce qui était déjà encaissé peut être corrigé.','« Ajouter au calendrier » : télécharge un fichier à ouvrir sur le téléphone. Le retrait et le retour y sont avec une alarme avant.','Tout en bas : « Clients à relancer », pour renvoyer un message ou un email à ceux qui ont déjà loué.'],
-      ['Une « Demande » ne bloque rien : seule l\'« Option » réserve le matériel.','Pour une grosse quantité, tu peux ajouter une réduction en % sur la location : le prix se recalcule tout seul.','Une majoration (en % ou en euros) ajoute un montant si le client demande un avantage en plus. Elle s\'ajoute après la réduction.','Donne toujours l\'heure de retrait et de retour : le rappel en dépend. Une bannière jaune apparaît en haut quand le retour approche (1, 2 ou 3 heures avant, au choix), tant que l\'outil est ouvert.','Coche « accepte de recevoir nos offres » seulement si le client est d\'accord : seuls ces clients sont proposés pour les emails de relance. Chaque message contient « répondez STOP ».','Un manquant au retour est retiré du stock automatiquement.','Les retards apparaissent en rouge.','Le stock total se modifie tout en bas de l\'onglet.','Nouveau matériel acheté : en bas de l\'onglet, « Ajouter un matériel » avec son nom et sa quantité. Il apparaît ensuite partout : calendrier, locations, devis et statistiques.']),
+      ['Une « Demande » ne bloque rien : seule l\'« Option » réserve le matériel.','Pour une grosse quantité, tu peux ajouter une réduction en % sur la location : le prix se recalcule tout seul.','Une majoration (en % ou en euros) ajoute un montant si le client demande un avantage en plus. Elle s\'ajoute après la réduction.','Pour une grosse commande ou un prix négocié, écris un « montant libre » : il remplace entièrement le total calculé (le calcul reste affiché à titre indicatif). Vide = calcul automatique.','Donne toujours l\'heure de retrait et de retour : le rappel en dépend. Une bannière jaune apparaît en haut quand le retour approche (1, 2 ou 3 heures avant, au choix), tant que l\'outil est ouvert.','Coche « accepte de recevoir nos offres » seulement si le client est d\'accord : seuls ces clients sont proposés pour les emails de relance. Chaque message contient « répondez STOP ».','Un manquant au retour est retiré du stock automatiquement.','Les retards apparaissent en rouge.','Le stock total se modifie tout en bas de l\'onglet.','Nouveau matériel acheté : en bas de l\'onglet, « Ajouter un matériel » avec son nom et sa quantité. Il apparaît ensuite partout : calendrier, locations, devis et statistiques.']),
     g('Messages','Des messages tout prêts, à copier dans Gmail ou WhatsApp.',
       ['Choisis l\'entreprise et le type de message (premier message, relance, réponse à une demande, proposer un appel, message à une connaissance, demande d\'avis après l\'événement).','Copie le texte, envoie-le depuis Gmail ou WhatsApp.','Reviens cliquer sur « Marquer comme envoyé » : la fiche est mise à jour et la relance est programmée.'],
       ['Rien ne part tout seul depuis cet onglet.','Jamais de prix dans un message écrit.']),
@@ -1242,20 +1242,21 @@ function customMatHTML(){
 }
 
 /* ---------- location : prix, heures, modification, clients ---------- */
-function resCalc(items,remise,majPct,majEur){
+function resCalc(items,remise,majPct,majEur,libre){
   const sub=MAT.reduce((a,[k,,,pk])=>a+num((items||{})[k])*num(S.pricing[pk]),0);
   const rp=Math.min(90,Math.max(0,num(remise))),mp=Math.min(300,Math.max(0,num(majPct))),me=Math.max(0,num(majEur));
   const ra=Math.round(sub*rp)/100,base=sub-ra,ma=Math.round(base*mp)/100;
-  return {sub,rp,ra,mp,ma,me,total:Math.round((base+ma+me)*100)/100};
+  const calc=Math.round((base+ma+me)*100)/100,fixed=libre!=null&&String(libre).trim()!=='';
+  return {sub,rp,ra,mp,ma,me,calc,fixed,total:fixed?Math.max(0,Math.round(num(libre)*100)/100):calc};
 }
-function resTotal(x){return x.total!=null?num(x.total):resCalc(x.items,x.remise,x.majPct,x.majEur).total}
+function resTotal(x){return x.total!=null?num(x.total):resCalc(x.items,x.remise,x.majPct,x.majEur,x.totalLibre).total}
 function calcLines(c,label){
   const extra=c.rp>0||c.mp>0||c.me>0;
   return (extra?`<div class="ev"><span>Sous-total</span><span>${fmt(c.sub)}</span></div>`:'')
    +(c.rp>0?`<div class="ev"><span>Réduction ${c.rp} %</span><span style="color:var(--good)">− ${fmt(c.ra)}</span></div>`:'')
    +(c.mp>0?`<div class="ev"><span>Majoration ${c.mp} %</span><span style="color:var(--warn)">+ ${fmt(c.ma)}</span></div>`:'')
    +(c.me>0?`<div class="ev"><span>Supplément</span><span style="color:var(--warn)">+ ${fmt(c.me)}</span></div>`:'')
-   +`<div class="total"><span>${label||'Location (indicatif, hors livraison)'}${extra?', après ajustements':''}</span><b>${fmt(c.total)}</b></div>`;
+   +(c.fixed?`<div class="ev"><span>Montant calculé (indicatif)</span><span>${fmt(c.calc)}</span></div><div class="total"><span>Montant libre fixé par toi</span><b>${fmt(c.total)}</b></div>`:`<div class="total"><span>${label||'Location (indicatif, hors livraison)'}${extra?', après ajustements':''}</span><b>${fmt(c.total)}</b></div>`);
 }
 function hm(t){return t?String(t).slice(0,5).replace(':','h'):''}
 function resWhen(x){return fdateFull(x.start)+(x.startTime?' '+hm(x.startTime):'')+' → '+fdateFull(x.end||x.start)+(x.endTime?' '+hm(x.endTime):'')}
@@ -1271,7 +1272,7 @@ function icsFor(x){
   L.push(...ev(x.id+'-retour','RETOUR matériel : '+(x.client||''),x.end||x.start,x.endTime||'18:00',rm));
   L.push('END:VCALENDAR');return L.join('\r\n');
 }
-function editInit(x){return {id:x.id,client:x.client||'',phone:x.phone||'',email:x.email||'',start:x.start||'',startTime:x.startTime||'',end:x.end||x.start||'',endTime:x.endTime||'',remind:String(x.remind||'120'),optin:!!x.optinMail,note:x.note||'',remise:x.remise||'',majPct:x.majPct||'',majEur:x.majEur||'',paidAmount:x.paid?String(x.paidAmount==null?resTotal(x):x.paidAmount):'',items:Object.fromEntries(MAT.filter(([k])=>num((x.items||{})[k])>0).map(([k])=>[k,String(num(x.items[k]))]))}}
+function editInit(x){return {id:x.id,client:x.client||'',phone:x.phone||'',email:x.email||'',start:x.start||'',startTime:x.startTime||'',end:x.end||x.start||'',endTime:x.endTime||'',remind:String(x.remind||'120'),optin:!!x.optinMail,note:x.note||'',remise:x.remise||'',majPct:x.majPct||'',majEur:x.majEur||'',libre:x.totalLibre!=null&&x.totalLibre!==''?String(x.totalLibre):'',paidAmount:x.paid?String(x.paidAmount==null?resTotal(x):x.paidAmount):'',items:Object.fromEntries(MAT.filter(([k])=>num((x.items||{})[k])>0).map(([k])=>[k,String(num(x.items[k]))]))}}
 function editHTML(x){
   const e=S.edit,inp='background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 9px;color:var(--ink)';
   const f=(l,k,t,ph)=>`<label class="f"><span>${l}</span><input data-e="${k}" type="${t||'text'}" value="${esc(e[k]||'')}"${ph?` placeholder="${ph}"`:''}></label>`;
@@ -1281,7 +1282,7 @@ function editHTML(x){
     ${f('Date de retrait','start','date')}${f('Heure de retrait','startTime','time')}${f('Date de retour','end','date')}${f('Heure de retour','endTime','time')}
     <label class="f"><span>Rappel avant le retour</span><select data-e="remind"><option value="60"${e.remind==='60'?' selected':''}>1 heure avant</option><option value="120"${e.remind==='120'?' selected':''}>2 heures avant</option><option value="180"${e.remind==='180'?' selected':''}>3 heures avant</option></select></label></div>
    <div class="sec-label">Quantités (celles qui sont chez le client)</div><div class="fg">${MAT.map(([k,l])=>`<label class="f"><span>${l}</span><input data-ei="${k}" inputmode="numeric" value="${esc(e.items[k]||'')}"></label>`).join('')}</div>
-   <div class="fg w2" style="margin-top:8px">${f('Réduction (%)','remise','text','0')}${f('Majoration (%)','majPct','text','0')}${f('Supplément (€)','majEur','text','0')}${x.paid?f('Montant encaissé (€)','paidAmount','text'):''}</div>
+   <div class="fg w2" style="margin-top:8px">${f('Réduction (%)','remise','text','0')}${f('Majoration (%)','majPct','text','0')}${f('Supplément (€)','majEur','text','0')}${f('Montant libre (€)','libre','text','vide = calcul automatique')}${x.paid?f('Montant encaissé (€)','paidAmount','text'):''}</div>
    <label class="f" style="margin-top:8px"><span>Note</span><input data-e="note" value="${esc(e.note)}"></label>
    <label class="sm" style="display:flex;gap:6px;align-items:center;margin-top:8px"><input type="checkbox" data-e="optin"${e.optin?' checked':''}> Le client accepte de recevoir nos offres (il peut dire STOP à tout moment)</label>
    <div id="eout" style="margin-top:8px"></div>
@@ -1290,7 +1291,7 @@ function editHTML(x){
 function updateEdit(){
   const o=document.getElementById('eout');if(!o||!S.edit)return;const e=S.edit,x=S.reservations.find(y=>y.id===e.id);if(!x)return;
   const items={};MAT.forEach(([k])=>{const n=num(e.items[k]);if(n>0)items[k]=n});
-  const c=resCalc(items,e.remise,e.majPct,e.majEur);let w='';
+  const c=resCalc(items,e.remise,e.majPct,e.majEur,e.libre);let w='';
   if(BLOCKING.includes(x.status)&&e.start){const m=matCheck(items,e.start,e.end||e.start,x.id);if(m.miss.length)w=`<div class="warns"><div class="bad">Plus assez de stock sur cette période : ${m.miss.map(y=>y.l.toLowerCase()+' (manque '+(y.n-Math.max(0,y.a.free))+')').join(', ')}.</div></div>`}
   const old=resTotal(x),diff=Math.round((c.total-old)*100)/100;
   o.innerHTML=calcLines(c,'Nouveau total')+`<div class="muted sm">Avant : ${fmt(old)}${diff?' · écart '+(diff>0?'+':'−')+' '+fmt(Math.abs(diff)):''}${x.paid?' · déjà encaissé : '+fmt(num(x.paidAmount)):''}</div>`+w;
@@ -1301,7 +1302,7 @@ function resRow(x){
   const tot=resTotal(x),can=['confirmee','sortie','rendue'].includes(x.status);
   const pay=x.paid?`<span class="chip good">Encaissé ${fmt(num(x.paidAmount))}${x.paidDate?' le '+fdateFull(x.paidDate):''}</span> <button class="btn sm" data-act="runpay" data-id="${esc(x.id)}" data-write>Annuler l'encaissement</button>`
     :can?`<label class="sm muted">Encaissé (€) <input id="pay-${esc(x.id)}" inputmode="decimal" value="${tot}" style="width:80px;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:3px 6px"></label> <button class="btn sm primary" data-act="rpay" data-id="${esc(x.id)}" data-write>Marquer encaissé</button>`:'';
-  const extra=`<div class="sm" style="margin:6px 0 2px"><b>${esc(resWhen(x))}</b>${x.email?' · '+esc(x.email):''} · Total <b>${fmt(tot)}</b>${x.remise?` · réduction ${esc(x.remise)} %`:''}${x.majPct?` · majoration ${esc(x.majPct)} %`:''}${x.majEur?` · supplément ${fmt(num(x.majEur))}`:''}${x.endTime&&x.remind?` · rappel ${num(x.remind)/60} h avant le retour`:''}</div>
+  const extra=`<div class="sm" style="margin:6px 0 2px"><b>${esc(resWhen(x))}</b>${x.email?' · '+esc(x.email):''} · Total <b>${fmt(tot)}</b>${x.remise?` · réduction ${esc(x.remise)} %`:''}${x.majPct?` · majoration ${esc(x.majPct)} %`:''}${x.majEur?` · supplément ${fmt(num(x.majEur))}`:''}${x.totalLibre!=null&&x.totalLibre!==''?' · <b>montant libre</b>':''}${x.endTime&&x.remind?` · rappel ${num(x.remind)/60} h avant le retour`:''}</div>
    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">${x.status!=='annulee'?`<button class="btn sm" data-act="redit" data-id="${esc(x.id)}" data-write>Modifier</button>`:''}<button class="btn sm" data-act="rics" data-id="${esc(x.id)}">Ajouter au calendrier (avec rappel)</button>${pay}</div>`;
   return h.replace(/<\/div>\s*$/,extra+'</div>');
 }
@@ -1373,6 +1374,7 @@ function matHTML(){
    <div class="remrow"><label class="f"><span>Réduction sur la location (%)</span><input data-r="remise" inputmode="decimal" value="${esc(r.remise||'')}" placeholder="0"></label><span class="remq">${[5,10,15,20].map(v=>`<button type="button" class="btn sm${num(r.remise)===v?' primary':''}" data-act="rremise" data-v="${v}">${v} %</button>`).join('')}<button type="button" class="btn sm" data-act="rremise" data-v="0">Aucune</button></span></div>
    <div class="remrow"><label class="f"><span>Majoration sur la location (%)</span><input data-r="majPct" inputmode="decimal" value="${esc(r.majPct||'')}" placeholder="0"></label><span class="remq">${[5,10,15,20].map(v=>`<button type="button" class="btn sm${num(r.majPct)===v?' primary':''}" data-act="rmaj" data-v="${v}">+ ${v} %</button>`).join('')}<button type="button" class="btn sm" data-act="rmaj" data-v="0">Aucune</button></span>
     <label class="f"><span>ou supplément en euros (€)</span><input data-r="majEur" inputmode="decimal" value="${esc(r.majEur||'')}" placeholder="0"></label></div>
+   <div class="remrow"><label class="f"><span>Montant libre (€) : remplace le total calculé</span><input data-r="libre" inputmode="decimal" value="${esc(r.libre||'')}" placeholder="vide = calcul automatique"></label><span class="remq sm muted">Pour une grosse commande ou un prix négocié : écris le montant final, il remplace le calcul.</span></div>
    <label class="f" style="margin-top:8px"><span>Note (adresse, livraison, caution…)</span><input data-r="note" value="${esc(r.note)}"></label>
    <div id="rout" style="margin-top:10px"></div></section>
   <aside><section class="card"><h3>Disponibilité sur une période</h3>
@@ -1398,7 +1400,7 @@ function updateMat(){
     :c.unk.length?`<div>Stock inconnu pour ${c.unk.map(x=>x.l.toLowerCase()).join(', ')} : vérifie à la main avant de confirmer.</div>`
     :`<div class="ok">Tout est disponible sur la période.</div>`;
   out.innerHTML=`<div class="scroll-x"><table class="t"><thead><tr><th>Matériel</th><th class="r">Demandé</th><th class="r">Libre</th><th class="r">Prix</th></tr></thead><tbody>${c.L.map(x=>`<tr><td>${esc(x.l)}</td><td class="r">${x.n}</td><td class="r" style="color:${x.a&&!x.ok?'var(--bad)':'inherit'}">${x.a?Math.max(0,x.a.free):'?'}</td><td class="r">${fmt(x.price)}</td></tr>`).join('')}</tbody></table></div>
-   ${calcLines(resCalc(r.items,r.remise,r.majPct,r.majEur))}
+   ${calcLines(resCalc(r.items,r.remise,r.majPct,r.majEur,r.libre))}
    <div class="warns">${v}</div>
    <p style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="rsave" data-st="demande" data-write>Enregistrer la demande</button><button class="btn primary" data-act="rsave" data-st="option" data-write${c.miss.length||c.unk.length?' disabled':''}>Bloquer le matériel (option)</button></p>`;
 }
@@ -1581,9 +1583,9 @@ const ACT={
     const items={};MAT.forEach(([k])=>{const n=num(r.items[k]);if(n>0)items[k]=n});
     if(!Object.keys(items).length){toast('Ajoute au moins une quantité.',true);return}
     if(st==='option'){const c=matCheck(items,r.start,r.end||r.start,null);if(c.miss.length||c.unk.length){toast('Stock insuffisant ou inconnu : impossible de bloquer.',true);return}}
-    const c=resCalc(items,r.remise,r.majPct,r.majEur);
-    if(await addReservation({client:r.client.trim(),phone:r.phone.trim(),email:String(r.email||'').trim(),channel:r.channel,start:r.start,startTime:r.startTime,end:r.end||r.start,endTime:r.endTime,remind:r.remind||'120',optinMail:!!r.optin,note:r.note.trim(),items,status:st,remise:c.rp||0,majPct:c.mp||0,majEur:c.me||0,subtotal:c.sub,total:c.total})){
-      toast(st==='option'?'Matériel bloqué.':'Demande enregistrée (rien n\'est bloqué).');S.r={client:'',phone:'',email:'',channel:r.channel,start:'',startTime:'',end:'',endTime:'',remind:r.remind||'120',optin:false,note:'',items:{},remise:'',majPct:'',majEur:''};render()}
+    const c=resCalc(items,r.remise,r.majPct,r.majEur,r.libre);
+    if(await addReservation({client:r.client.trim(),phone:r.phone.trim(),email:String(r.email||'').trim(),channel:r.channel,start:r.start,startTime:r.startTime,end:r.end||r.start,endTime:r.endTime,remind:r.remind||'120',optinMail:!!r.optin,note:r.note.trim(),items,status:st,remise:c.rp||0,majPct:c.mp||0,majEur:c.me||0,totalLibre:c.fixed?c.total:'',subtotal:c.sub,total:c.total})){
+      toast(st==='option'?'Matériel bloqué.':'Demande enregistrée (rien n\'est bloqué).');S.r={client:'',phone:'',email:'',channel:r.channel,start:'',startTime:'',end:'',endTime:'',remind:r.remind||'120',optin:false,note:'',items:{},remise:'',majPct:'',majEur:'',libre:''};render()}
   },
   rmaj(t){S.r.majPct=t.dataset.v==='0'?'':t.dataset.v;render()},
   redit(t){const x=S.reservations.find(y=>y.id===t.dataset.id);if(!x)return;S.edit=editInit(x);render();updateEdit()},
@@ -1597,9 +1599,9 @@ const ACT={
     const items={};MAT.forEach(([k])=>{const n=num(e.items[k]);if(n>0)items[k]=n});
     if(!Object.keys(items).length){toast('Ajoute au moins une quantité.',true);return}
     if(BLOCKING.includes(x.status)){const m=matCheck(items,e.start,e.end||e.start,x.id);if(m.miss.length){toast('Plus assez de stock : '+m.miss.map(y=>y.l.toLowerCase()).join(', ')+'.',true);return}}
-    const c=resCalc(items,e.remise,e.majPct,e.majEur),old=resTotal(x),now=new Date().toISOString();
+    const c=resCalc(items,e.remise,e.majPct,e.majEur,e.libre),old=resTotal(x),now=new Date().toISOString();
     const diffs=MAT.filter(([k])=>num((x.items||{})[k])!==num(items[k])).map(([k,l])=>l.toLowerCase()+' '+num((x.items||{})[k])+' → '+num(items[k]));
-    const u={client:String(e.client).trim(),phone:String(e.phone||'').trim(),email:String(e.email||'').trim(),start:e.start,startTime:e.startTime,end:e.end||e.start,endTime:e.endTime,remind:e.remind||'120',optinMail:!!e.optin,note:String(e.note||'').trim(),items,remise:c.rp||0,majPct:c.mp||0,majEur:c.me||0,subtotal:c.sub,total:c.total,updated:now,
+    const u={client:String(e.client).trim(),phone:String(e.phone||'').trim(),email:String(e.email||'').trim(),start:e.start,startTime:e.startTime,end:e.end||e.start,endTime:e.endTime,remind:e.remind||'120',optinMail:!!e.optin,note:String(e.note||'').trim(),items,remise:c.rp||0,majPct:c.mp||0,majEur:c.me||0,totalLibre:c.fixed?c.total:'',subtotal:c.sub,total:c.total,updated:now,
       log:[...(x.log||[]).slice(-29),{t:now,by:S.who||'—',x:'Modifiée'+(diffs.length?' : '+diffs.join(', '):'')+(c.total!==old?' · total '+fmt(old)+' → '+fmt(c.total):'')}]};
     if(x.paid&&e.paidAmount!==''){u.paidAmount=num(e.paidAmount)}
     if(await guard(()=>S.db.doc('reservations/'+x.id).update(u))){S.edit=null;toast('Réservation modifiée'+(c.total!==old?' : nouveau total '+fmt(c.total):'')+'.');render()}
@@ -1682,7 +1684,7 @@ document.addEventListener('change',e=>{
   if(t.dataset.stf){stState()[t.dataset.stf]=t.value;render();return}
   if(t.dataset.cf){S.cf=t.value;render();return}
   if(t.dataset.e){S.edit[t.dataset.e]=t.type==='checkbox'?t.checked:t.value;updateEdit();return}
-  if(t.dataset.r){S.r[t.dataset.r]=t.type==='checkbox'?t.checked:t.value;updateMat();return}
+  if(t.dataset.r){S.r[t.dataset.r]=t.type==='checkbox'?t.checked:t.value;if(t.tagName==='SELECT'||t.type==='checkbox')updateMat();return}
   if(t.dataset.matday){S.matDay=t.value;if(S.matEnd&&S.matEnd<t.value)S.matEnd=t.value;render();return}
   if(t.dataset.matend){S.matEnd=t.value;render();return}
   if(t.dataset.matcal){S.matCal=t.value||today();render();return}
