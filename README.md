@@ -33,3 +33,4 @@ Règles d'accès (RLS) : seuls les utilisateurs connectés **et** présents dans
    insert into membres(email, nom, role) values ('email@exemple.fr', 'Prénom', 'membre');
    ```
 3. La personne clique sur le lien reçu, choisit son mot de passe sur le site, puis se connecte.
+
