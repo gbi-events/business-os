@@ -38,3 +38,10 @@ Ce dépôt est modifié par le Claude de Germaine (propriétaire de GBI Events) 
 - **Contenu :** jamais de prix, une seule question, moins de 100 mots.
 - **Désinscription :** aucune mention dans le texte principal. Tout en bas, après la signature, en petits caractères gris : « Message professionnel envoyé par GBI Events. Pour ne plus recevoir nos messages, répondez STOP. »
 - **Pas de lien de désinscription dans les en-têtes.**
+
+## Locations : prix, encaissement, rappels, relance
+- Une réservation (`reservations`) garde `email`, `startTime`, `endTime`, `remind` (minutes avant le retour : 60, 120 ou 180), `optinMail`, `remise` (%), `majPct` (%), `majEur` (€), `subtotal` et `total`. Le total est calculé par `resCalc` : réduction, puis majoration en %, puis supplément en euros.
+- Encaissement : `paid`, `paidDate`, `paidAmount`, `paidBy`. L'onglet Statistiques sépare « CA encaissé · événements » (fiches, à la date de signature) et « CA encaissé · location » (réservations, à la date d'encaissement), avec un total.
+- Le bouton « Modifier » corrige quantités, dates, prix et revérifie le stock ; l'historique garde la trace de la modification.
+- Rappel de retour : bannière dans l'outil (`retourBanners`) et fichier calendrier `.ics` avec alarme. Un rappel Telegram automatique demande un jeton de bot (secrets `TELEGRAM_*` pas encore créés).
+- « Clients à relancer » : clients ayant déjà loué (téléphone ou email commun), message de fidélité avec 10 % de réduction à copier. Les emails ne vont qu'aux clients ayant donné leur accord (`optinMail`), chaque message contient « répondez STOP » ; `stopMail` retire un client de la liste.

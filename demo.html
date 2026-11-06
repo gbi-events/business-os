@@ -349,7 +349,7 @@ const MAT_BASE=MAT.length;
 const STOCK_FIELDS=[['stChaises','Chaises'],['stTablesRect','Tables rectangulaires'],['stTablesRondes','Tables rondes (8 ou 23 selon le relevé)'],['stNappes','Nappes'],['stKits','Kits de vaisselle'],['stCouvertsOr','Couverts dorés'],['stCouvertsArg','Couverts argentés']];
 
 /* ---------- état ---------- */
-const S={view:'today',prospects:[],reservations:[],r:{client:'',phone:'',channel:'lbc',start:'',end:'',note:'',items:{}},matDay:'',pricing:{...DEF_PRICE},spend:{},loaded:false,db:null,canWrite:true,offline:false,err:'',
+const S={view:'today',prospects:[],reservations:[],r:{client:'',phone:'',email:'',channel:'lbc',start:'',startTime:'',end:'',endTime:'',remind:'120',optin:false,note:'',items:{},remise:'',majPct:'',majEur:''},edit:null,cf:'60',matDay:'',pricing:{...DEF_PRICE},spend:{},loaded:false,db:null,canWrite:true,offline:false,err:'',
   day:'',who:'',call:{pid:'',skip:[],lost:'Déjà un traiteur',seg:''},drawer:null,f:{q:'',seg:'',chan:'',stage:'actifs'},showImport:false,showAll:false,confirmDel:null,
   q:{pid:'',date:'',kind:'',guests:'',formule:'none',cocktail:false,vin:false,service:false,fumee:false,plancha:false,deco:'none',decoCustom:'',chaises:'',tablesRect:'',tablesRondes:'',nappes:'',kits:'',couvertsOr:'',couvertsArg:'',validated:false},
   m:{pid:'',tpl:'first',offer:'cle'},dirty:false,downloads:null};
@@ -602,7 +602,9 @@ const ST_SERIES=[
   ['lead','Nouveaux prospects','Fiches ajoutées au Business OS.'],
   ['quote','Devis envoyés','Fiches passées à « Devis envoyé ».'],
   ['sign','Événements signés','Fiches passées à « Signé ».'],
-  ['ca','Chiffre d\'affaires signé','Montant signé, à la date de signature.',1]
+  ['ca','Chiffre d\'affaires signé','Montant signé, à la date de signature.',1],
+  ['cash','CA encaissé · événements','Montant encaissé sur les événements.',1],
+  ['cashL','CA encaissé · location','Montant encaissé sur les locations, à la date d\'encaissement.',1]
 ];
 function stState(){if(!S.st){let g='semaine';try{g=localStorage.getItem('gbi_stg')||g}catch(e){}S.st={g:ST_GRAN.some(x=>x[0]===g)?g:'semaine',who:'',chan:'',from:'',to:''}}return S.st}
 function stKey(iso,g){
@@ -638,6 +640,7 @@ function stEvents(){
     if(p.signedDate){E.push({k:'sign',t:p.signedDate});E.push({k:'ca',t:p.signedDate,v:num(p.signedAmount)});E.push({k:'cash',t:p.signedDate,v:num(p.cashedAmount)})}
     for(let i=i0;i<E.length;i++){E[i].ch=p.channel;E[i].seg=p.segment}
   });
+  S.reservations.forEach(x=>{if(!x.paid||!x.paidDate)return;if(st.chan&&x.channel!==st.chan)return;if(st.who&&x.paidBy&&x.paidBy!==st.who)return;E.push({k:'cashL',t:x.paidDate,v:num(x.paidAmount),ch:x.channel})});
   return E;
 }
 function stRange(){const st=stState();return st.from&&st.to&&st.from<=st.to?{from:st.from,to:st.to}:null}
@@ -648,13 +651,13 @@ function stKeysBetween(from,to,g){
     k=stKey(toISO(d),g)}
   return out;
 }
-function stTotals(E){const o={call:0,joint:0,int:0,msg:0,lead:0,reply:0,quote:0,quoteV:0,sign:0,ca:0,cash:0};
-  E.forEach(e=>{if(e.k==='ca'||e.k==='cash')o[e.k]+=e.v||0;else{o[e.k]++;if(e.k==='quote')o.quoteV+=e.v||0}});return o}
+function stTotals(E){const o={call:0,joint:0,int:0,msg:0,lead:0,reply:0,quote:0,quoteV:0,sign:0,ca:0,cash:0,cashL:0};
+  E.forEach(e=>{if(e.k==='ca'||e.k==='cash'||e.k==='cashL')o[e.k]+=e.v||0;else{o[e.k]++;if(e.k==='quote')o.quoteV+=e.v||0}});return o}
 function stAgg(E,keys,g){
   const idx=Object.fromEntries(keys.map((k,i)=>[k,i])),A={};
-  ['call','joint','int','msg','lead','reply','quote','quoteV','sign','ca','cash'].forEach(k=>A[k]=keys.map(()=>0));
+  ['call','joint','int','msg','lead','reply','quote','quoteV','sign','ca','cash','cashL'].forEach(k=>A[k]=keys.map(()=>0));
   E.forEach(e=>{const b=idx[stKey(e.t,g)];if(b===undefined)return;
-    if(e.k==='ca'||e.k==='cash')A[e.k][b]+=e.v||0;else{A[e.k][b]++;if(e.k==='quote')A.quoteV[b]+=e.v||0}});
+    if(e.k==='ca'||e.k==='cash'||e.k==='cashL')A[e.k][b]+=e.v||0;else{A[e.k][b]++;if(e.k==='quote')A.quoteV[b]+=e.v||0}});
   return A;
 }
 const stTot=a=>a.reduce((s,x)=>s+x,0);
@@ -689,7 +692,9 @@ function statsHTML(){
     ${tile('Devis envoyés','quote',0,`${fmt(T('quoteV'))} au total · ${stDelta(T('quote'),PT('quote'))}`)}
     ${tile('Événements signés','sign')}
     ${tile('CA signé','ca',1)}
-    ${tile('CA encaissé','cash',1)}</section>`;
+    ${tile('CA encaissé · événements','cash',1)}
+    ${tile('CA encaissé · location','cashL',1)}
+    <div class="kpi"><span class="kl">CA encaissé · total</span><b>${fmt(T('cash')+T('cashL'))}</b><span class="ks">${stDelta(T('cash')+T('cashL'),PT('cash')+PT('cashL'),1)}</span></div></section>`;
   const opts=(L,v)=>L.map(([k,l])=>`<option value="${k}"${v===k?' selected':''}>${l}</option>`).join('');
   const bar=`<div class="stbar"><div class="stseg" role="group" aria-label="Regrouper par">${ST_GRAN.map(([k,l])=>`<button data-act="stg" data-g="${k}" aria-pressed="${g===k}">${l}</button>`).join('')}</div>
     <select data-stf="who" aria-label="Personne"><option value="">Tout le monde</option>${opts([['Kissima','Kissima'],['Germaine','Germaine']],st.who)}</select>
@@ -706,12 +711,12 @@ function statsHTML(){
     <tr><td>Devis qui deviennent un événement signé</td><td class="r">${stInt(nS)} ÷ ${stInt(T('quote'))}</td><td class="r"><b>${stRate(nS,T('quote'))}</b>${warn(T('quote'))}</td></tr>
     <tr><td>Panier moyen signé</td><td class="r">${fmt(T('ca'))} ÷ ${stInt(nS)}</td><td class="r"><b>${nS?fmt(T('ca')/nS):'—'}</b></td></tr>
     </tbody></table></div><p class="note">Les réponses comptent toutes les fiches passées en « Répondu », y compris les demandes entrantes. En dessous de 30, un taux ne veut encore rien dire.</p></section>`;
-  const cols=[['call','Appels'],['joint','Conversations'],['msg','Emails/messages'],['reply','Réponses'],['lead','Nouveaux prospects'],['quote','Devis'],['sign','Signés'],['ca','CA signé'],['cash','CA encaissé']];
+  const cols=[['call','Appels'],['joint','Conversations'],['msg','Emails/messages'],['reply','Réponses'],['lead','Nouveaux prospects'],['quote','Devis'],['sign','Signés'],['ca','CA signé'],['cash','Encaissé événements'],['cashL','Encaissé location']];
   const table=`<details class="card" style="margin-top:14px"><summary><b>Voir les chiffres en tableau</b></summary><div class="scroll-x" style="margin-top:8px"><table class="t"><thead><tr><th>${G[1]}</th>${cols.map(c=>`<th class="r">${c[1]}</th>`).join('')}</tr></thead><tbody>
-    ${keys.map((k,i)=>`<tr><td>${stLabel(k,g,1)}</td>${cols.map(([c])=>`<td class="r">${c==='ca'||c==='cash'?fmt(A[c][i]):A[c][i]}</td>`).join('')}</tr>`).reverse().join('')}
-    <tr><td><b>Total</b></td>${cols.map(([c])=>`<td class="r"><b>${c==='ca'||c==='cash'?fmt(T(c)):stInt(T(c))}</b></td>`).join('')}</tr></tbody></table></div>
+    ${keys.map((k,i)=>`<tr><td>${stLabel(k,g,1)}</td>${cols.map(([c])=>`<td class="r">${c==='ca'||c==='cash'||c==='cashL'?fmt(A[c][i]):A[c][i]}</td>`).join('')}</tr>`).reverse().join('')}
+    <tr><td><b>Total</b></td>${cols.map(([c])=>`<td class="r"><b>${c==='ca'||c==='cash'||c==='cashL'?fmt(T(c)):stInt(T(c))}</b></td>`).join('')}</tr></tbody></table></div>
     <p style="margin-top:8px"><button class="btn sm" data-act="stcsv">Exporter en CSV</button></p></details>`;
-  const foot=`<p class="note" style="margin-top:10px">Le filtre « Personne » s'applique aux appels et aux messages. Le CA encaissé est rattaché à la date de signature. Les dépenses par canal se saisissent dans l'onglet Canaux.</p>`;
+  const foot=`<p class="note" style="margin-top:10px">Le filtre « Personne » s'applique aux appels et aux messages. Le CA encaissé des événements est rattaché à la date de signature ; celui de la location, à la date où tu cliques « Marquer encaissé ». Les dépenses par canal se saisissent dans l'onglet Canaux.</p>`;
   const from=R?R.from:(g==='mois'?keys[0]+'-01':keys[0]),to=R?R.to:today();
   const inR=E.filter(e=>{const d=stKey(e.t,'jour');return d&&d>=from&&d<=to});
   const by=(kind,field,labels)=>{const m={};inR.filter(e=>e.k===kind).forEach(e=>{const key=e[field]||'?';m[key]=(m[key]||0)+(kind==='ca'?e.v||0:1)});
@@ -761,7 +766,7 @@ function stDraw(){
   });
 }
 async function stCSV(){
-  const D=S.stData;if(!D)return;const cols=[['call','Appels'],['joint','Conversations'],['msg','Emails et messages'],['reply','Réponses'],['lead','Nouveaux prospects'],['quote','Devis'],['quoteV','Montant devis €'],['sign','Signés'],['ca','CA signé €'],['cash','CA encaissé €']];
+  const D=S.stData;if(!D)return;const cols=[['call','Appels'],['joint','Conversations'],['msg','Emails et messages'],['reply','Réponses'],['lead','Nouveaux prospects'],['quote','Devis'],['quoteV','Montant devis €'],['sign','Signés'],['ca','CA signé €'],['cash','CA encaissé événements €'],['cashL','CA encaissé location €']];
   const q=v=>'"'+String(v).replace(/"/g,'""')+'"';
   const csv='﻿'+[q('Période')].concat(cols.map(c=>q(c[1]))).join(';')+'\n'+D.keys.map((k,i)=>[q(stLabel(k,D.g,1))].concat(cols.map(([c])=>q(String(Math.round(D.A[c][i]*100)/100).replace('.',',')))).join(';')).join('\n');
   if(!S.downloads){toast("Export indisponible dans cette vue.",true);return}
@@ -834,13 +839,13 @@ function helpHTML(){
       ['Choisis l\'entreprise, le type d\'événement, la date et le nombre d\'invités.','Coche les prestations voulues : le prix se calcule tout seul.','Si besoin, ajoute une réduction (5 %, 10 %, 15 %, 20 % ou un autre chiffre) : le total se recalcule tout seul.','Une fois le prix validé avec Germaine, coche « Prix et disponibilité validés par Germaine ».','Clique sur « Enregistrer sur la fiche » : la fiche passe en « Devis envoyé ».'],
       ['Le calcul utilise les prix de l\'onglet Règles.','En dessous de 1 500 €, l\'outil prévient : c\'est le minimum, sauf accord de Germaine.','Une réduction de plus de 30 % affiche une alerte : à valider avec Germaine.','« Bloquer ce matériel » réserve tout de suite le matériel du devis à cette date.','« Copier le texte » pour l\'envoyer au client.']),
     g('Matériel','Savoir ce qui est libre, louer du matériel et suivre les retours.',
-      ['Regarde le calendrier : vert = tout est libre, orange = en partie réservé (le chiffre = % encore libre), rouge = complet.','Pour une demande de location : remplis le client, les dates et les quantités. L\'outil vérifie le stock.','Fais avancer la location avec les boutons : Demande → Option (matériel bloqué) → Confirmée → Matériel sorti → Retour.','Au retour, indique les quantités rendues puis « Valider le retour ».'],
-      ['Une « Demande » ne bloque rien : seule l\'« Option » réserve le matériel.','Pour une grosse quantité, tu peux ajouter une réduction en % sur la location : le prix se recalcule tout seul.','Un manquant au retour est retiré du stock automatiquement.','Les retards apparaissent en rouge.','Le stock total se modifie tout en bas de l\'onglet.','Nouveau matériel acheté : en bas de l\'onglet, « Ajouter un matériel » avec son nom et sa quantité. Il apparaît ensuite partout : calendrier, locations, devis et statistiques.']),
+      ['Regarde le calendrier : vert = tout est libre, orange = en partie réservé (le chiffre = % encore libre), rouge = complet.','Pour une demande de location : remplis le client, les dates et les quantités. L\'outil vérifie le stock.','Fais avancer la location avec les boutons : Demande → Option (matériel bloqué) → Confirmée → Matériel sorti → Retour.','Au retour, indique les quantités rendues puis « Valider le retour ».','Pour encaisser : sur la location, écris le montant puis « Marquer encaissé ». Il part tout seul dans les statistiques, dans « CA encaissé · location ».','Pour corriger une commande (20 chaises au lieu de 24, une date, un prix) : bouton « Modifier ». Le total se recalcule, et ce qui était déjà encaissé peut être corrigé.','« Ajouter au calendrier » : télécharge un fichier à ouvrir sur le téléphone. Le retrait et le retour y sont avec une alarme avant.','Tout en bas : « Clients à relancer », pour renvoyer un message ou un email à ceux qui ont déjà loué.'],
+      ['Une « Demande » ne bloque rien : seule l\'« Option » réserve le matériel.','Pour une grosse quantité, tu peux ajouter une réduction en % sur la location : le prix se recalcule tout seul.','Une majoration (en % ou en euros) ajoute un montant si le client demande un avantage en plus. Elle s\'ajoute après la réduction.','Donne toujours l\'heure de retrait et de retour : le rappel en dépend. Une bannière jaune apparaît en haut quand le retour approche (1, 2 ou 3 heures avant, au choix), tant que l\'outil est ouvert.','Coche « accepte de recevoir nos offres » seulement si le client est d\'accord : seuls ces clients sont proposés pour les emails de relance. Chaque message contient « répondez STOP ».','Un manquant au retour est retiré du stock automatiquement.','Les retards apparaissent en rouge.','Le stock total se modifie tout en bas de l\'onglet.','Nouveau matériel acheté : en bas de l\'onglet, « Ajouter un matériel » avec son nom et sa quantité. Il apparaît ensuite partout : calendrier, locations, devis et statistiques.']),
     g('Messages','Des messages tout prêts, à copier dans Gmail ou WhatsApp.',
       ['Choisis l\'entreprise et le type de message (premier message, relance, réponse à une demande, proposer un appel, message à une connaissance, demande d\'avis après l\'événement).','Copie le texte, envoie-le depuis Gmail ou WhatsApp.','Reviens cliquer sur « Marquer comme envoyé » : la fiche est mise à jour et la relance est programmée.'],
       ['Rien ne part tout seul depuis cet onglet.','Jamais de prix dans un message écrit.']),
     g('Statistiques','Tous les chiffres de l\'activité, pour voir ce qui marche.',
-      ['Choisis la période : Jour, Semaine, Mois, ou des dates libres (du … au …).','Filtre si besoin par personne ou par canal.','Survole une barre pour voir le chiffre exact.'],
+      ['Choisis la période : Jour, Semaine, Mois, ou des dates libres (du … au …). Le CA encaissé est séparé : événements d\'un côté, location de l\'autre, et le total.','Filtre si besoin par personne ou par canal.','Survole une barre pour voir le chiffre exact.'],
       ['Chaque chiffre est comparé à la période d\'avant : ▲ en hausse, ▼ en baisse.','Plus bas : d\'où viennent les clients, l\'état des fiches, le matériel loué et les taux de réussite.','En dessous de 30 cas, un taux ne veut encore rien dire.','« Exporter en CSV » pour garder les chiffres dans un tableur.']),
     g('Canaux','Savoir d\'où viennent les ventes et quelle source de clients garder ou arrêter.',
       ['Chaque mois, saisis ce qui a été dépensé par canal (publicités…).','Lis le verdict de chaque ligne.'],
@@ -1184,7 +1189,7 @@ function matCheck(items,start,end,exclude){
   const L=MAT.filter(([k])=>num((items||{})[k])>0).map(([k,l,sk,pk])=>{const n=num(items[k]),a=avail(k,start,end||start,exclude);return {k,l,n,a,ok:!!a&&n<=a.free,price:n*num(S.pricing[pk])}});
   return {L,miss:L.filter(x=>x.a&&!x.ok),unk:L.filter(x=>!x.a)};
 }
-function resRow(x){
+function resRowBase(x){
   const late=resLate(x);
   const btn=(st,l,c='')=>`<button class="btn sm ${c}" data-act="rstatus" data-id="${esc(x.id)}" data-st="${st}" data-write>${l}</button>`;
   let acts='';
@@ -1235,6 +1240,115 @@ function customMatHTML(){
    ${L.length?`<div class="sec-label" style="margin-top:14px">Matériel ajouté</div><div class="scroll-x"><table class="t"><thead><tr><th>Matériel</th><th class="r">Prix location (€/u)</th><th></th></tr></thead><tbody>${L.map(m=>`<tr><td><b>${esc(m.l)}</b> <span class="muted sm">(${S.pricing['st_'+m.k]==null?'?':S.pricing['st_'+m.k]} en stock)</span></td><td class="r"><input data-price="px_${esc(m.k)}" inputmode="decimal" value="${S.pricing['px_'+m.k]==null?'':S.pricing['px_'+m.k]}" placeholder="—" style="width:80px;text-align:right;${inp}"></td><td class="r"><button class="btn sm" data-act="matdel" data-k="${esc(m.k)}" data-write>Retirer</button></td></tr>`).join('')}</tbody></table></div>
    <p class="note" style="margin-top:6px">La quantité se modifie dans « Stock total », juste au-dessus.</p><p style="margin-top:8px"><button class="btn" data-act="pricesave" data-write>Enregistrer les prix</button></p>`:''}</section>`;
 }
+
+/* ---------- location : prix, heures, modification, clients ---------- */
+function resCalc(items,remise,majPct,majEur){
+  const sub=MAT.reduce((a,[k,,,pk])=>a+num((items||{})[k])*num(S.pricing[pk]),0);
+  const rp=Math.min(90,Math.max(0,num(remise))),mp=Math.min(300,Math.max(0,num(majPct))),me=Math.max(0,num(majEur));
+  const ra=Math.round(sub*rp)/100,base=sub-ra,ma=Math.round(base*mp)/100;
+  return {sub,rp,ra,mp,ma,me,total:Math.round((base+ma+me)*100)/100};
+}
+function resTotal(x){return x.total!=null?num(x.total):resCalc(x.items,x.remise,x.majPct,x.majEur).total}
+function calcLines(c,label){
+  const extra=c.rp>0||c.mp>0||c.me>0;
+  return (extra?`<div class="ev"><span>Sous-total</span><span>${fmt(c.sub)}</span></div>`:'')
+   +(c.rp>0?`<div class="ev"><span>Réduction ${c.rp} %</span><span style="color:var(--good)">− ${fmt(c.ra)}</span></div>`:'')
+   +(c.mp>0?`<div class="ev"><span>Majoration ${c.mp} %</span><span style="color:var(--warn)">+ ${fmt(c.ma)}</span></div>`:'')
+   +(c.me>0?`<div class="ev"><span>Supplément</span><span style="color:var(--warn)">+ ${fmt(c.me)}</span></div>`:'')
+   +`<div class="total"><span>${label||'Location (indicatif, hors livraison)'}${extra?', après ajustements':''}</span><b>${fmt(c.total)}</b></div>`;
+}
+function hm(t){return t?String(t).slice(0,5).replace(':','h'):''}
+function resWhen(x){return fdateFull(x.start)+(x.startTime?' '+hm(x.startTime):'')+' → '+fdateFull(x.end||x.start)+(x.endTime?' '+hm(x.endTime):'')}
+function returnAt(x){const d=x.end||x.start;if(!d)return null;return new Date(d+'T'+(x.endTime||'23:59')+':00')}
+function icsEsc(t){return String(t||'').replace(/\\/g,'\\\\').replace(/;/g,'\;').replace(/,/g,'\\,').replace(/\n/g,'\\n')}
+function icsDT(d,t){return String(d).replace(/-/g,'')+'T'+String(t||'09:00').replace(':','')+'00'}
+function icsFor(x){
+  const rm=num(x.remind)||120,now=new Date().toISOString().replace(/[-:]/g,'').slice(0,15)+'Z';
+  const desc=icsEsc((x.client||'')+(x.phone?' · '+x.phone:'')+'\n'+itemsTxt(x.items)+(x.note?'\n'+x.note:''));
+  const ev=(id,sum,d,t,alarm)=>['BEGIN:VEVENT','UID:'+id+'@gbi-events','DTSTAMP:'+now,'DTSTART:'+icsDT(d,t),'DTEND:'+icsDT(d,(t||'09:00').replace(/^(\d\d):/,(m,h)=>String(Math.min(23,+h+1)).padStart(2,'0')+':')),'SUMMARY:'+icsEsc(sum),'DESCRIPTION:'+desc,'BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:'+icsEsc(sum),'TRIGGER:-PT'+alarm+'M','END:VALARM','END:VEVENT'];
+  const L=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//GBI Events//Business OS//FR','CALSCALE:GREGORIAN'];
+  if(x.start)L.push(...ev(x.id+'-retrait','Retrait matériel : '+(x.client||''),x.start,x.startTime||'09:00',60));
+  L.push(...ev(x.id+'-retour','RETOUR matériel : '+(x.client||''),x.end||x.start,x.endTime||'18:00',rm));
+  L.push('END:VCALENDAR');return L.join('\r\n');
+}
+function editInit(x){return {id:x.id,client:x.client||'',phone:x.phone||'',email:x.email||'',start:x.start||'',startTime:x.startTime||'',end:x.end||x.start||'',endTime:x.endTime||'',remind:String(x.remind||'120'),optin:!!x.optinMail,note:x.note||'',remise:x.remise||'',majPct:x.majPct||'',majEur:x.majEur||'',paidAmount:x.paid?String(x.paidAmount==null?resTotal(x):x.paidAmount):'',items:Object.fromEntries(MAT.filter(([k])=>num((x.items||{})[k])>0).map(([k])=>[k,String(num(x.items[k]))]))}}
+function editHTML(x){
+  const e=S.edit,inp='background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 9px;color:var(--ink)';
+  const f=(l,k,t,ph)=>`<label class="f"><span>${l}</span><input data-e="${k}" type="${t||'text'}" value="${esc(e[k]||'')}"${ph?` placeholder="${ph}"`:''}></label>`;
+  return `<div class="card" style="padding:12px;margin-top:8px;border:2px solid var(--brass,var(--line))"><b>Modifier la réservation de ${esc(x.client||'')}</b> <span class="chip">${esc(RSTAT_L[x.status]||x.status)}</span>
+   <p class="note">Corrige les quantités, les dates ou le prix. Le stock est revérifié et le total se recalcule tout seul.</p>
+   <div class="fg w2">${f('Client','client')}${f('Téléphone','phone','tel')}${f('Email','email','email')}
+    ${f('Date de retrait','start','date')}${f('Heure de retrait','startTime','time')}${f('Date de retour','end','date')}${f('Heure de retour','endTime','time')}
+    <label class="f"><span>Rappel avant le retour</span><select data-e="remind"><option value="60"${e.remind==='60'?' selected':''}>1 heure avant</option><option value="120"${e.remind==='120'?' selected':''}>2 heures avant</option><option value="180"${e.remind==='180'?' selected':''}>3 heures avant</option></select></label></div>
+   <div class="sec-label">Quantités (celles qui sont chez le client)</div><div class="fg">${MAT.map(([k,l])=>`<label class="f"><span>${l}</span><input data-ei="${k}" inputmode="numeric" value="${esc(e.items[k]||'')}"></label>`).join('')}</div>
+   <div class="fg w2" style="margin-top:8px">${f('Réduction (%)','remise','text','0')}${f('Majoration (%)','majPct','text','0')}${f('Supplément (€)','majEur','text','0')}${x.paid?f('Montant encaissé (€)','paidAmount','text'):''}</div>
+   <label class="f" style="margin-top:8px"><span>Note</span><input data-e="note" value="${esc(e.note)}"></label>
+   <label class="sm" style="display:flex;gap:6px;align-items:center;margin-top:8px"><input type="checkbox" data-e="optin"${e.optin?' checked':''}> Le client accepte de recevoir nos offres (il peut dire STOP à tout moment)</label>
+   <div id="eout" style="margin-top:8px"></div>
+   <p style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-act="redsave" data-write>Enregistrer les modifications</button><button class="btn" data-act="redcancel">Annuler</button></p></div>`;
+}
+function updateEdit(){
+  const o=document.getElementById('eout');if(!o||!S.edit)return;const e=S.edit,x=S.reservations.find(y=>y.id===e.id);if(!x)return;
+  const items={};MAT.forEach(([k])=>{const n=num(e.items[k]);if(n>0)items[k]=n});
+  const c=resCalc(items,e.remise,e.majPct,e.majEur);let w='';
+  if(BLOCKING.includes(x.status)&&e.start){const m=matCheck(items,e.start,e.end||e.start,x.id);if(m.miss.length)w=`<div class="warns"><div class="bad">Plus assez de stock sur cette période : ${m.miss.map(y=>y.l.toLowerCase()+' (manque '+(y.n-Math.max(0,y.a.free))+')').join(', ')}.</div></div>`}
+  const old=resTotal(x),diff=Math.round((c.total-old)*100)/100;
+  o.innerHTML=calcLines(c,'Nouveau total')+`<div class="muted sm">Avant : ${fmt(old)}${diff?' · écart '+(diff>0?'+':'−')+' '+fmt(Math.abs(diff)):''}${x.paid?' · déjà encaissé : '+fmt(num(x.paidAmount)):''}</div>`+w;
+}
+function resRow(x){
+  if(S.edit&&S.edit.id===x.id)return editHTML(x);
+  let h=resRowBase(x);
+  const tot=resTotal(x),can=['confirmee','sortie','rendue'].includes(x.status);
+  const pay=x.paid?`<span class="chip good">Encaissé ${fmt(num(x.paidAmount))}${x.paidDate?' le '+fdateFull(x.paidDate):''}</span> <button class="btn sm" data-act="runpay" data-id="${esc(x.id)}" data-write>Annuler l'encaissement</button>`
+    :can?`<label class="sm muted">Encaissé (€) <input id="pay-${esc(x.id)}" inputmode="decimal" value="${tot}" style="width:80px;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:3px 6px"></label> <button class="btn sm primary" data-act="rpay" data-id="${esc(x.id)}" data-write>Marquer encaissé</button>`:'';
+  const extra=`<div class="sm" style="margin:6px 0 2px"><b>${esc(resWhen(x))}</b>${x.email?' · '+esc(x.email):''} · Total <b>${fmt(tot)}</b>${x.remise?` · réduction ${esc(x.remise)} %`:''}${x.majPct?` · majoration ${esc(x.majPct)} %`:''}${x.majEur?` · supplément ${fmt(num(x.majEur))}`:''}${x.endTime&&x.remind?` · rappel ${num(x.remind)/60} h avant le retour`:''}</div>
+   <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">${x.status!=='annulee'?`<button class="btn sm" data-act="redit" data-id="${esc(x.id)}" data-write>Modifier</button>`:''}<button class="btn sm" data-act="rics" data-id="${esc(x.id)}">Ajouter au calendrier (avec rappel)</button>${pay}</div>`;
+  return h.replace(/<\/div>\s*$/,extra+'</div>');
+}
+function retourBanners(){
+  const now=Date.now();let h='';
+  S.reservations.filter(x=>['confirmee','sortie'].includes(x.status)&&x.endTime).forEach(x=>{
+    const t=returnAt(x);if(!t)return;const rm=(num(x.remind)||120)*60000,left=t.getTime()-now;
+    if(left<=rm&&left>-3*3600000){const m=Math.round(Math.abs(left)/60000),txt=m>=60?Math.floor(m/60)+' h '+String(m%60).padStart(2,'0'):m+' min';
+      h+=`<div class="banner ${left<0?'bad':'warn'}">${left<0?'Retour dépassé de '+txt:'Rappel : retour dans '+txt}. ${esc(x.client||'')} rend ${esc(itemsTxt(x.items))} à ${hm(x.endTime)}${x.phone?' · '+esc(fmtPhone(x.phone)):''}</div>`}
+  });return h;
+}
+/* clients à relancer */
+function custKey(x){const p=String(x.phone||'').replace(/\D/g,'');const e=String(x.email||'').trim().toLowerCase();return p.length>=9?'t'+p.slice(-9):e?'e'+e:'n'+String(x.client||'').trim().toLowerCase()}
+function custList(){
+  const m={};
+  S.reservations.filter(x=>['confirmee','sortie','rendue'].includes(x.status)).forEach(x=>{
+    const k=custKey(x),c=m[k]||(m[k]={k,name:x.client,phone:'',email:'',n:0,total:0,last:'',consent:false,stop:false,relance:'',ids:[],items:{}});
+    c.n++;c.total+=resTotal(x);const e=x.end||x.start||'';if(e>=c.last){c.last=e;c.name=x.client||c.name}
+    if(x.phone)c.phone=x.phone;if(x.email)c.email=x.email;if(x.optinMail)c.consent=true;if(x.stopMail)c.stop=true;if((x.relanceAt||'')>c.relance)c.relance=x.relanceAt;c.ids.push(x.id);
+    Object.entries(x.items||{}).forEach(([k2,v])=>{c.items[k2]=(c.items[k2]||0)+num(v)});
+  });
+  return Object.values(m);
+}
+function custDue(){
+  const d=S.cf==='all'?0:+S.cf||60,lim=addDays(today(),-d),rel=addDays(today(),-90);
+  return custList().filter(c=>!c.stop&&c.last&&c.last<=lim&&!(c.relance&&c.relance.slice(0,10)>=rel)).sort((a,b)=>String(a.last).localeCompare(String(b.last)));
+}
+const OFFRE_PCT=10;
+function custFirst(c){return String(c.name||'').trim().split(/\s+/)[0]||''}
+function custMsg(c,kind){
+  const pct=OFFRE_PCT,f=custFirst(c),what=itemsTxt(c.items);
+  if(kind==='mail')return {subject:`Un événement bientôt ? −${pct} % sur votre prochaine location`,body:`Bonjour${f?' '+f:''},\n\nVous avez loué du matériel chez GBI Events (${what}), merci pour votre confiance.\n\nVous préparez un nouvel événement ? En tant que client, vous bénéficiez de ${pct} % de réduction sur votre prochaine location.\n\nRépondez simplement à ce mail avec la date et le nombre d'invités : je vous dis tout de suite ce qui est disponible.\n\nGBI Events\n\n—\nMessage professionnel envoyé par GBI Events. Pour ne plus recevoir nos messages, répondez STOP.`};
+  return {subject:'',body:`Bonjour${f?' '+f:''}, c'est GBI Events. Vous aviez loué du matériel chez nous (${what}). Un événement en préparation ? Vous avez ${pct} % de réduction sur votre prochaine location. Dites-moi la date et je vous confirme la disponibilité. Pour ne plus recevoir de messages, répondez STOP.`};
+}
+function waLink(c,text){let d=String(c.phone||'').replace(/\D/g,'');if(d.length===10&&d[0]==='0')d='33'+d.slice(1);return d?'https://wa.me/'+d+'?text='+encodeURIComponent(text):''}
+function customersHTML(){
+  const L=custDue(),all=custList(),mails=L.filter(c=>c.consent&&c.email);
+  const opt=[['30','30 jours'],['60','60 jours'],['90','90 jours'],['180','6 mois'],['all','Tous']];
+  const ago=iso=>{const d=Math.round((new Date(today()+'T12:00:00')-new Date(iso+'T12:00:00'))/864e5);return d<=0?'aujourd\'hui':d<60?'il y a '+d+' j':'il y a '+Math.round(d/30)+' mois'};
+  return `<section class="card" style="margin-top:14px"><h3>Clients à relancer (${L.length})</h3>
+   <p class="note">Les clients qui ont déjà loué chez GBI Events (${all.length} au total). Un petit message avec ${OFFRE_PCT} % de réduction pour leur prochain événement garde la relation vivante. Rien ne part tout seul : copie le texte ou ouvre WhatsApp.</p>
+   <div class="mrange"><span class="muted sm">Dernière location terminée depuis plus de</span><select data-cf="1" aria-label="Ancienneté">${opt.map(([k,l])=>`<option value="${k}"${S.cf===k?' selected':''}>${l}</option>`).join('')}</select>
+    <button class="btn sm" data-act="cemails"${mails.length?'':' disabled'}>Copier les emails (${mails.length} avec accord)</button></div>
+   ${L.length?`<div class="scroll-x"><table class="t"><thead><tr><th>Client</th><th>Contact</th><th class="r">Locations</th><th class="r">Total</th><th>Dernier retour</th><th>Accord</th><th></th></tr></thead><tbody>${L.map(c=>{const sms=custMsg(c,'sms').body,wa=waLink(c,sms);return `<tr><td><b>${esc(c.name||'')}</b></td><td class="sm">${esc(c.phone?fmtPhone(c.phone):'')}${c.phone&&c.email?'<br>':''}${esc(c.email||'')}</td><td class="r">${c.n}</td><td class="r">${fmt(c.total)}</td><td class="sm">${fdateFull(c.last)}<br><span class="muted">${ago(c.last)}</span></td><td>${c.consent?chip('Oui','good'):chip('Non demandé','warn')}</td>
+     <td style="white-space:nowrap"><div style="display:flex;gap:4px;flex-wrap:wrap">${wa?`<a class="btn sm" href="${esc(wa)}" target="_blank" rel="noopener">WhatsApp</a>`:''}<button class="btn sm" data-act="ccopy" data-k="${esc(c.k)}" data-m="sms">Copier SMS</button>${c.email?`<button class="btn sm" data-act="ccopy" data-k="${esc(c.k)}" data-m="mail">Copier email</button>`:''}<button class="btn sm primary" data-act="cdone" data-k="${esc(c.k)}" data-write>Relancé</button><button class="btn sm" data-act="cstop" data-k="${esc(c.k)}" data-write>Ne plus contacter</button></div></td></tr>`}).join('')}</tbody></table></div>`:`<p class="note">Personne à relancer pour l'instant.</p>`}
+   <p class="note" style="margin-top:6px">Bon réflexe : n'envoie des emails qu'aux clients qui ont donné leur accord (case cochée dans la location). « Relancé » les met de côté pendant 90 jours. Chaque message contient « répondez STOP ».</p></section>`;
+}
 function matHTML(){
   const r=S.r,t=today(),day=S.matDay||t,R=S.reservations;
   const n=(k,l)=>`<label class="f"><span>${l}</span><input data-ri="${k}" inputmode="numeric" value="${esc(r.items[k]||'')}"></label>`;
@@ -1250,9 +1364,15 @@ function matHTML(){
    <p class="note">Pour une demande reçue par Leboncoin, téléphone, Instagram ou le site. Le stock est vérifié sur toute la période, en comptant le matériel déjà bloqué ou pas encore rendu. Une « demande » ne bloque rien : seul le passage en « Option » réserve le matériel.</p>
    <div class="fg w2"><label class="f"><span>Client</span><input data-r="client" value="${esc(r.client)}"></label><label class="f"><span>Téléphone</span><input data-r="phone" type="tel" value="${esc(r.phone)}"></label>
     <label class="f"><span>Canal</span><select data-r="channel">${CHANNELS.map(([k,l])=>`<option value="${k}"${r.channel===k?' selected':''}>${l}</option>`).join('')}</select></label>
-    <label class="f"><span>Date de retrait (ou livraison)</span><input data-r="start" type="date" value="${esc(r.start)}"></label><label class="f"><span>Date de retour</span><input data-r="end" type="date" value="${esc(r.end)}"></label></div>
+    <label class="f"><span>Email</span><input data-r="email" type="email" value="${esc(r.email||'')}" placeholder="pour la relance"></label>
+    <label class="f"><span>Date de retrait (ou livraison)</span><input data-r="start" type="date" value="${esc(r.start)}"></label><label class="f"><span>Heure de retrait</span><input data-r="startTime" type="time" value="${esc(r.startTime||'')}"></label>
+    <label class="f"><span>Date de retour</span><input data-r="end" type="date" value="${esc(r.end)}"></label><label class="f"><span>Heure de retour</span><input data-r="endTime" type="time" value="${esc(r.endTime||'')}"></label>
+    <label class="f"><span>Rappel avant le retour</span><select data-r="remind"><option value="60"${r.remind==='60'?' selected':''}>1 heure avant</option><option value="120"${(r.remind||'120')==='120'?' selected':''}>2 heures avant</option><option value="180"${r.remind==='180'?' selected':''}>3 heures avant</option></select></label></div>
+   <label class="sm" style="display:flex;gap:6px;align-items:center;margin-top:8px"><input type="checkbox" data-r="optin"${r.optin?' checked':''}> Le client accepte de recevoir nos offres (il peut dire STOP à tout moment)</label>
    <div class="sec-label">Quantités</div><div class="fg">${MAT.map(([k,l])=>n(k,l)).join('')}</div>
    <div class="remrow"><label class="f"><span>Réduction sur la location (%)</span><input data-r="remise" inputmode="decimal" value="${esc(r.remise||'')}" placeholder="0"></label><span class="remq">${[5,10,15,20].map(v=>`<button type="button" class="btn sm${num(r.remise)===v?' primary':''}" data-act="rremise" data-v="${v}">${v} %</button>`).join('')}<button type="button" class="btn sm" data-act="rremise" data-v="0">Aucune</button></span></div>
+   <div class="remrow"><label class="f"><span>Majoration sur la location (%)</span><input data-r="majPct" inputmode="decimal" value="${esc(r.majPct||'')}" placeholder="0"></label><span class="remq">${[5,10,15,20].map(v=>`<button type="button" class="btn sm${num(r.majPct)===v?' primary':''}" data-act="rmaj" data-v="${v}">+ ${v} %</button>`).join('')}<button type="button" class="btn sm" data-act="rmaj" data-v="0">Aucune</button></span>
+    <label class="f"><span>ou supplément en euros (€)</span><input data-r="majEur" inputmode="decimal" value="${esc(r.majEur||'')}" placeholder="0"></label></div>
    <label class="f" style="margin-top:8px"><span>Note (adresse, livraison, caution…)</span><input data-r="note" value="${esc(r.note)}"></label>
    <div id="rout" style="margin-top:10px"></div></section>
   <aside><section class="card"><h3>Disponibilité sur une période</h3>
@@ -1264,6 +1384,7 @@ function matHTML(){
   <section class="card" style="margin-top:14px"><h3>Matériel chez les clients (${back.length})</h3>${back.length?back.map(resRow).join(''):'<p class="note">Rien à récupérer.</p>'}</section>
   <section class="card" style="margin-top:14px"><h3>Demandes et réservations à venir (${open.length})</h3>${open.length?open.map(resRow).join(''):'<p class="note">Aucune réservation en cours.</p>'}</section>
   ${done.length?`<section class="card" style="margin-top:14px"><h3>Terminées récemment</h3>${done.map(resRow).join('')}</section>`:''}
+  ${customersHTML()}
   <section class="card" style="margin-top:14px"><h3>Stock total</h3><p class="note">À tenir à jour : un manquant déclaré au retour réduit le stock automatiquement. Tables rondes : 8 ou 23 selon les relevés, à confirmer. Nappes : stock inconnu.</p><div class="fg">${STOCK_FIELDS.map(sf).join('')}</div>
    <p style="margin-top:10px"><button class="btn primary" data-act="pricesave" data-write>Enregistrer le stock</button></p></section>${customMatHTML()}`;
 }
@@ -1277,7 +1398,7 @@ function updateMat(){
     :c.unk.length?`<div>Stock inconnu pour ${c.unk.map(x=>x.l.toLowerCase()).join(', ')} : vérifie à la main avant de confirmer.</div>`
     :`<div class="ok">Tout est disponible sur la période.</div>`;
   out.innerHTML=`<div class="scroll-x"><table class="t"><thead><tr><th>Matériel</th><th class="r">Demandé</th><th class="r">Libre</th><th class="r">Prix</th></tr></thead><tbody>${c.L.map(x=>`<tr><td>${esc(x.l)}</td><td class="r">${x.n}</td><td class="r" style="color:${x.a&&!x.ok?'var(--bad)':'inherit'}">${x.a?Math.max(0,x.a.free):'?'}</td><td class="r">${fmt(x.price)}</td></tr>`).join('')}</tbody></table></div>
-   ${(()=>{const st=sum(c.L,x=>x.price),pc=Math.min(90,Math.max(0,num(r.remise))),ra=Math.round(st*pc)/100;return (pc>0?`<div class="ev"><span>Sous-total</span><span>${fmt(st)}</span></div><div class="ev"><span>Réduction ${pc} %</span><span style="color:var(--good)">− ${fmt(ra)}</span></div>`:'')+`<div class="total"><span>Location (indicatif, hors livraison)${pc>0?', après réduction':''}</span><b>${fmt(st-ra)}</b></div>`})()}
+   ${calcLines(resCalc(r.items,r.remise,r.majPct,r.majEur))}
    <div class="warns">${v}</div>
    <p style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="rsave" data-st="demande" data-write>Enregistrer la demande</button><button class="btn primary" data-act="rsave" data-st="option" data-write${c.miss.length||c.unk.length?' disabled':''}>Bloquer le matériel (option)</button></p>`;
 }
@@ -1374,6 +1495,7 @@ function banners(){
   if(S.offline)h+=`<div class="banner bad">Connexion à la base impossible. Vérifie ta connexion internet, puis recharge la page.</div>`;
   else if(S.err)h+=`<div class="banner bad">Base partagée : lecture impossible (${esc(S.err)}). Reconnecte-toi et recharge la page.</div>`;
   else if(S.db&&!S.canWrite)h+=`<div class="banner">Lecture seule : ton compte n'a pas le droit de modifier. Demande à Germaine de t'ajouter comme membre.</div>`;
+  try{h+=retourBanners()}catch(e){}
   $('#banners').innerHTML=h;
   const on=!!S.db&&!S.err;$('#sync .dot').className='dot '+(on?(S.canWrite?'on':''):'off');
   $('#synctext').textContent=S.offline?'Hors ligne':S.err?'Erreur':!S.db?'Connexion…':S.canWrite?'Base partagée':'Lecture seule';
@@ -1383,9 +1505,10 @@ function render(){
   if(S.pview===undefined){try{S.pview=localStorage.getItem('gbi_pview')||'liste'}catch(e){S.pview='liste'}}
   renderTabs();banners();
   main.innerHTML=(VIEWS[S.view]||VIEWS.today)();
-  if(S.view==='quote')updateQuote();if(S.view==='messages')updateMsg();if(S.view==='materiel')updateMat();if(S.view==='stats')stDraw();
+  if(S.view==='quote')updateQuote();if(S.view==='messages')updateMsg();if(S.view==='materiel'){updateMat();if(S.edit)updateEdit()}if(S.view==='stats')stDraw();
   $('#app').classList.toggle('ro',!S.canWrite);S.dirty=false;
 }
+setInterval(()=>{try{if(S.db)banners()}catch(e){}},60000);
 function refresh(){
   const a=document.activeElement;
   if(a&&main.contains(a)&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)){S.dirty=true;renderTabs();return}
@@ -1454,11 +1577,63 @@ const ACT={
     const r=S.r,st=t.dataset.st;
     if(!r.client.trim()){toast('Indique le nom du client.',true);return}
     if(!r.start){toast('Indique la date de retrait.',true);return}
+    if(!r.startTime||!r.endTime){toast('Indique l\'heure de retrait et l\'heure de retour (pour le rappel).',true);return}
     const items={};MAT.forEach(([k])=>{const n=num(r.items[k]);if(n>0)items[k]=n});
     if(!Object.keys(items).length){toast('Ajoute au moins une quantité.',true);return}
     if(st==='option'){const c=matCheck(items,r.start,r.end||r.start,null);if(c.miss.length||c.unk.length){toast('Stock insuffisant ou inconnu : impossible de bloquer.',true);return}}
-    if(await addReservation({client:r.client.trim(),phone:r.phone.trim(),channel:r.channel,start:r.start,end:r.end||r.start,note:r.note.trim(),items,status:st,remise:Math.min(90,Math.max(0,num(r.remise)))||0})){
-      toast(st==='option'?'Matériel bloqué.':'Demande enregistrée (rien n\'est bloqué).');S.r={client:'',phone:'',channel:r.channel,start:'',end:'',note:'',items:{},remise:''};render()}
+    const c=resCalc(items,r.remise,r.majPct,r.majEur);
+    if(await addReservation({client:r.client.trim(),phone:r.phone.trim(),email:String(r.email||'').trim(),channel:r.channel,start:r.start,startTime:r.startTime,end:r.end||r.start,endTime:r.endTime,remind:r.remind||'120',optinMail:!!r.optin,note:r.note.trim(),items,status:st,remise:c.rp||0,majPct:c.mp||0,majEur:c.me||0,subtotal:c.sub,total:c.total})){
+      toast(st==='option'?'Matériel bloqué.':'Demande enregistrée (rien n\'est bloqué).');S.r={client:'',phone:'',email:'',channel:r.channel,start:'',startTime:'',end:'',endTime:'',remind:r.remind||'120',optin:false,note:'',items:{},remise:'',majPct:'',majEur:''};render()}
+  },
+  rmaj(t){S.r.majPct=t.dataset.v==='0'?'':t.dataset.v;render()},
+  redit(t){const x=S.reservations.find(y=>y.id===t.dataset.id);if(!x)return;S.edit=editInit(x);render();updateEdit()},
+  redcancel(){S.edit=null;render()},
+  async redsave(){
+    const e=S.edit;if(!e)return;const x=S.reservations.find(y=>y.id===e.id);if(!x)return;
+    if(!String(e.client).trim()){toast('Indique le nom du client.',true);return}
+    if(!e.start){toast('Indique la date de retrait.',true);return}
+    if(!e.startTime||!e.endTime){toast('Indique l\'heure de retrait et l\'heure de retour.',true);return}
+    if((e.end||e.start)<e.start){toast('La date de retour est avant la date de retrait.',true);return}
+    const items={};MAT.forEach(([k])=>{const n=num(e.items[k]);if(n>0)items[k]=n});
+    if(!Object.keys(items).length){toast('Ajoute au moins une quantité.',true);return}
+    if(BLOCKING.includes(x.status)){const m=matCheck(items,e.start,e.end||e.start,x.id);if(m.miss.length){toast('Plus assez de stock : '+m.miss.map(y=>y.l.toLowerCase()).join(', ')+'.',true);return}}
+    const c=resCalc(items,e.remise,e.majPct,e.majEur),old=resTotal(x),now=new Date().toISOString();
+    const diffs=MAT.filter(([k])=>num((x.items||{})[k])!==num(items[k])).map(([k,l])=>l.toLowerCase()+' '+num((x.items||{})[k])+' → '+num(items[k]));
+    const u={client:String(e.client).trim(),phone:String(e.phone||'').trim(),email:String(e.email||'').trim(),start:e.start,startTime:e.startTime,end:e.end||e.start,endTime:e.endTime,remind:e.remind||'120',optinMail:!!e.optin,note:String(e.note||'').trim(),items,remise:c.rp||0,majPct:c.mp||0,majEur:c.me||0,subtotal:c.sub,total:c.total,updated:now,
+      log:[...(x.log||[]).slice(-29),{t:now,by:S.who||'—',x:'Modifiée'+(diffs.length?' : '+diffs.join(', '):'')+(c.total!==old?' · total '+fmt(old)+' → '+fmt(c.total):'')}]};
+    if(x.paid&&e.paidAmount!==''){u.paidAmount=num(e.paidAmount)}
+    if(await guard(()=>S.db.doc('reservations/'+x.id).update(u))){S.edit=null;toast('Réservation modifiée'+(c.total!==old?' : nouveau total '+fmt(c.total):'')+'.');render()}
+  },
+  async rpay(t){
+    const x=S.reservations.find(y=>y.id===t.dataset.id);if(!x)return;const el=document.getElementById('pay-'+x.id),amt=Math.max(0,el?num(el.value):resTotal(x)),now=new Date().toISOString();
+    if(await guard(()=>S.db.doc('reservations/'+x.id).update({paid:true,paidDate:today(),paidAmount:amt,paidBy:S.who||'—',updated:now,log:[...(x.log||[]).slice(-29),{t:now,by:S.who||'—',x:'Encaissé : '+fmt(amt)}]})))toast('Encaissé : '+fmt(amt)+'.');
+  },
+  async runpay(t){
+    const x=S.reservations.find(y=>y.id===t.dataset.id);if(!x)return;const now=new Date().toISOString();
+    if(await guard(()=>S.db.doc('reservations/'+x.id).update({paid:false,paidDate:'',paidAmount:0,paidBy:'',updated:now,log:[...(x.log||[]).slice(-29),{t:now,by:S.who||'—',x:'Encaissement annulé'}]})))toast('Encaissement annulé.');
+  },
+  async rics(t){
+    const x=S.reservations.find(y=>y.id===t.dataset.id);if(!x)return;
+    if(!S.downloads){toast('Téléchargement indisponible dans cette vue.',true);return}
+    try{await S.downloads.save({filename:'gbi-location-'+String(x.client||'client').toLowerCase().replace(/[^a-z0-9]+/g,'-')+'.ics',data:icsFor(x)});toast('Fichier calendrier prêt : ouvre-le pour ajouter le retrait et le retour avec leur rappel.')}catch(err){if(!err||err.code!=='declined')toast('Export impossible.',true)}
+  },
+  async ccopy(t){
+    const c=custList().find(y=>y.k===t.dataset.k);if(!c)return;const m=custMsg(c,t.dataset.m),txt=(m.subject?'Objet : '+m.subject+'\n\n':'')+m.body;
+    try{await navigator.clipboard.writeText(txt);toast('Copié. Colle-le dans '+(t.dataset.m==='mail'?'Gmail':'WhatsApp ou SMS')+'.')}catch(e){toast('Copie impossible : sélectionne le texte à la main.',true)}
+  },
+  async cemails(){
+    const L=custDue().filter(c=>c.consent&&c.email).map(c=>c.email);if(!L.length)return;
+    try{await navigator.clipboard.writeText(L.join(', '));toast(L.length+' email(s) copiés. Colle-les en copie cachée (Cci) dans Gmail.')}catch(e){toast('Copie impossible.',true)}
+  },
+  async cdone(t){
+    const c=custList().find(y=>y.k===t.dataset.k);if(!c)return;const now=new Date().toISOString();
+    for(const id of c.ids){const x=S.reservations.find(y=>y.id===id);if(x)await guard(()=>S.db.doc('reservations/'+id).update({relanceAt:now,updated:now,log:[...(x.log||[]).slice(-29),{t:now,by:S.who||'—',x:'Relancé (offre de fidélité)'}]}))}
+    toast('Marqué comme relancé.');
+  },
+  async cstop(t){
+    const c=custList().find(y=>y.k===t.dataset.k);if(!c)return;const now=new Date().toISOString();
+    for(const id of c.ids){const x=S.reservations.find(y=>y.id===id);if(x)await guard(()=>S.db.doc('reservations/'+id).update({stopMail:true,updated:now,log:[...(x.log||[]).slice(-29),{t:now,by:S.who||'—',x:'Ne plus contacter'}]}))}
+    toast('Cette personne ne sera plus proposée.');
   },
   async rstatus(t){
     const x=S.reservations.find(y=>y.id===t.dataset.id),st=t.dataset.st;if(!x)return;
@@ -1494,16 +1669,20 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('input',e=>{
   const t=e.target;
+  if(t.dataset.e){S.edit[t.dataset.e]=t.type==='checkbox'?t.checked:t.value;updateEdit();return}
+  if(t.dataset.ei){S.edit.items[t.dataset.ei]=t.value;updateEdit();return}
   if(t.dataset.filter){S.f[t.dataset.filter]=t.value;const l=$('#plist');if(l)l.innerHTML=listHTML();return}
   if(t.dataset.q&&t.type!=='checkbox'&&t.tagName!=='SELECT'){S.q[t.dataset.q]=t.value;updateQuote()}
-  if(t.dataset.r){S.r[t.dataset.r]=t.value;updateMat()}
+  if(t.dataset.r){S.r[t.dataset.r]=t.type==='checkbox'?t.checked:t.value;updateMat()}
   if(t.dataset.ri){S.r.items[t.dataset.ri]=t.value;updateMat()}
 });
 document.addEventListener('change',e=>{
   const t=e.target;
   if(t.id==='who'){S.who=t.value;try{localStorage.setItem('gbi_who',S.who)}catch(x){}if(S.view==='messages')updateMsg();return}
   if(t.dataset.stf){stState()[t.dataset.stf]=t.value;render();return}
-  if(t.dataset.r){S.r[t.dataset.r]=t.value;updateMat();return}
+  if(t.dataset.cf){S.cf=t.value;render();return}
+  if(t.dataset.e){S.edit[t.dataset.e]=t.type==='checkbox'?t.checked:t.value;updateEdit();return}
+  if(t.dataset.r){S.r[t.dataset.r]=t.type==='checkbox'?t.checked:t.value;updateMat();return}
   if(t.dataset.matday){S.matDay=t.value;if(S.matEnd&&S.matEnd<t.value)S.matEnd=t.value;render();return}
   if(t.dataset.matend){S.matEnd=t.value;render();return}
   if(t.dataset.matcal){S.matCal=t.value||today();render();return}
